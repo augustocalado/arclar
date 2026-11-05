@@ -1,0 +1,100 @@
+export type TipoImovel = 'apartamento' | 'casa' | 'terreno' | 'comercial' | 'cobertura' | 'studio' | 'flat' | 'sala' | 'galpao' | 'chacara';
+export type TipoNegocio = 'venda' | 'aluguel';
+export type StatusImovel = 'ativo' | 'inativo' | 'vendido' | 'alugado' | 'pendente';
+export type PerfilUsuario = 'admin' | 'imobiliaria' | 'corretor' | 'proprietario' | 'interessado';
+export type StatusLead = 'novo' | 'atendimento' | 'visita_agendada' | 'proposta' | 'negociacao' | 'vendido' | 'perdido';
+
+export interface Endereco {
+  id?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  estado_sigla: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface Anunciante {
+  id: string;
+  nome: string;
+  nome_comercial?: string;
+  logo_url?: string;
+  telefone?: string;
+  whatsapp?: string;
+  email?: string;
+  creci?: string;
+  perfil: PerfilUsuario;
+}
+
+export interface Imovel {
+  id: string;
+  slug: string;
+  titulo: string;
+  descricao?: string;
+  tipo: TipoImovel;
+  negocio: TipoNegocio;
+  status: StatusImovel;
+  preco: number;
+  preco_condominio?: number;
+  preco_iptu?: number;
+  area_total?: number;
+  area_construida?: number;
+  quartos?: number;
+  suites?: number;
+  banheiros?: number;
+  vagas?: number;
+  destaque: boolean;
+  foto_principal?: string;
+  fotos?: string[];
+  video_url?: string;
+  endereco: Endereco;
+  anunciante?: Anunciante;
+  visualizacoes?: number;
+  criado_em?: string;
+  atualizado_em?: string;
+}
+
+export interface FiltrosBusca {
+  negocio?: TipoNegocio | 'todos';
+  tipo?: TipoImovel | '';
+  cidade?: string;
+  estado?: string;
+  bairro?: string;
+  preco_min?: number;
+  preco_max?: number;
+  quartos?: number;
+  page?: number;
+}
+
+export interface Lead {
+  id?: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  mensagem?: string;
+  imovel_id: string;
+  anunciante_id: string;
+  status: StatusLead;
+  origem: string;
+  criado_em?: string;
+}
+
+export interface Plano {
+  id: string;
+  nome: string;
+  descricao: string;
+  preco_mensal: number;
+  preco_anual?: number;
+  limite_imoveis: number;
+  destaque_incluso: number;
+  multi_usuarios: boolean;
+  crm: boolean;
+  relatorios: boolean;
+  ativo: boolean;
+  features: string[];
+}
+

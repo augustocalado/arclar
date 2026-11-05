@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+:root {
+  --azul: #102B50;
+  --dourado: #F5A900;
+  --branco: #FFFFFF;
+  --cinza-claro: #F5F5F5;
+  --cinza-medio: #E5E7EB;
+  --cinza-texto: #6B7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #ffffff;
+  color: #171717;
+  font-family: 'Inter', 'Segoe UI', Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #102B50; border-radius: 3px; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeInUp { animation: fadeInUp 0.5s ease-out forwards; }
+
+.card-imovel {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-imovel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(16,43,80,0.15);
+}
+
+.btn-primary {
+  background: #F5A900;
+  color: #102B50;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn-primary:hover { background: #d4910a; transform: translateY(-1px); }
+
+.btn-secondary {
+  background: #102B50;
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn-secondary:hover { background: #1a3f70; transform: translateY(-1px); }
+
+.badge-venda {
+  background: #102B50;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-aluguel {
+  background: #059669;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-destaque {
+  background: #F5A900;
+  color: #102B50;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-arclar {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.input-arclar:focus { border-color: #102B50; }
+
+select.input-arclar {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Links hover via CSS */
+.link-nav:hover { color: #F5A900 !important; }
+.link-footer:hover { color: #F5A900 !important; }
+
+.card-cidade {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.card-cidade:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(16,43,80,0.2);
+}
+
+.card-beneficio {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-beneficio:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(16,43,80,0.1);
+}
+
+.card-tipo:hover {
+  border-color: #F5A900 !important;
+  background: #FFFBEB !important;
+  transform: translateY(-3px);
+}
+.card-tipo {
+  transition: all 0.2s;
+}
+
+.btn-anunciar:hover { background: #d4910a !important; transform: translateY(-2px); }
+.btn-planos:hover { background: #F5A900 !important; color: #102B50 !important; }
+.btn-ver-mais:hover { background: #102B50 !important; color: white !important; }
+
+.link-plano:hover { opacity: 0.85; }
+.btn-submit:hover { background: #1a3f70 !important; }
+
+@media (max-width: 768px) {
+  .nav-desktop { display: none !important; }
+  .btn-menu-mobile { display: flex !important; }
+}
+
+@media (max-width: 900px) {
+  .imovel-grid { grid-template-columns: 1fr !important; }
+}
