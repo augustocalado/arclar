@@ -71,6 +71,49 @@ export default async function HomePage() {
           />
         </div>
 
+        {/* Efeito decorativo de fundo */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}>
+          <div
+            className="hero-glow hero-glow-1"
+            style={{
+              position: 'absolute',
+              top: '-12%',
+              right: '-6%',
+              width: 440,
+              height: 440,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(245,169,0,0.22) 0%, rgba(245,169,0,0) 70%)',
+            }}
+          />
+          <div
+            className="hero-glow hero-glow-2"
+            style={{
+              position: 'absolute',
+              bottom: '-18%',
+              left: '-10%',
+              width: 560,
+              height: 560,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(96,165,250,0.20) 0%, rgba(96,165,250,0) 70%)',
+            }}
+          />
+          <svg
+            className="hero-onda"
+            viewBox="0 0 1440 220"
+            preserveAspectRatio="none"
+            style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 170, display: 'block' }}
+          >
+            <path
+              d="M0,110 C240,30 480,190 720,110 C960,30 1200,190 1440,110 L1440,220 L0,220 Z"
+              fill="rgba(255,255,255,0.045)"
+            />
+            <path
+              d="M0,155 C260,85 500,225 740,155 C980,85 1220,225 1440,155 L1440,220 L0,220 Z"
+              fill="rgba(245,169,0,0.07)"
+            />
+          </svg>
+        </div>
+
         <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 1280, margin: '0 auto', padding: '60px 24px 48px', textAlign: 'center' }}>
           <div style={{ marginBottom: 12 }}>
             <span style={{ background: 'rgba(245,169,0,0.15)', color: '#F5A900', padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 700, border: '1px solid rgba(245,169,0,0.3)', letterSpacing: 1, textTransform: 'uppercase' }}>

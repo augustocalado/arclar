@@ -256,3 +256,34 @@ img, video {
   .grid-tipos { grid-template-columns: repeat(2, 1fr) !important; }
   .painel-page { padding: 16px 10px !important; }
 }
+
+/* ===== Efeito decorativo do banner ===== */
+@keyframes heroFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -18px, 0) scale(1.06); }
+}
+
+@keyframes heroWaveDrift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-2.5%, 4px, 0); }
+}
+
+.hero-glow {
+  filter: blur(6px);
+  animation: heroFloat 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-glow-2 { animation-delay: -6s; }
+
+.hero-onda {
+  animation: heroWaveDrift 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow,
+  .hero-onda {
+    animation: none;
+  }
+}
