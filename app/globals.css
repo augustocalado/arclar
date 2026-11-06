@@ -265,12 +265,12 @@ img, video {
 
 @keyframes heroWaveDrift {
   0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(-2.5%, 4px, 0); }
+  50% { transform: translate3d(-1.2%, 3px, 0); }
 }
 
 .hero-glow {
-  filter: blur(6px);
-  animation: heroFloat 14s ease-in-out infinite;
+  filter: blur(24px);
+  animation: heroFloat 16s ease-in-out infinite;
   will-change: transform;
 }
 

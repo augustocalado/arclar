@@ -82,7 +82,7 @@ export default async function HomePage() {
               width: 440,
               height: 440,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(245,169,0,0.22) 0%, rgba(245,169,0,0) 70%)',
+              background: 'radial-gradient(circle, rgba(245,169,0,0.16) 0%, rgba(245,169,0,0) 72%)',
             }}
           />
           <div
@@ -94,22 +94,22 @@ export default async function HomePage() {
               width: 560,
               height: 560,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(96,165,250,0.20) 0%, rgba(96,165,250,0) 70%)',
+              background: 'radial-gradient(circle, rgba(96,165,250,0.14) 0%, rgba(96,165,250,0) 72%)',
             }}
           />
           <svg
             className="hero-onda"
             viewBox="0 0 1440 220"
             preserveAspectRatio="none"
-            style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 170, display: 'block' }}
+            style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 120, display: 'block' }}
           >
             <path
-              d="M0,110 C240,30 480,190 720,110 C960,30 1200,190 1440,110 L1440,220 L0,220 Z"
-              fill="rgba(255,255,255,0.045)"
+              d="M0,120 C240,45 480,195 720,120 C960,45 1200,195 1440,120 L1440,220 L0,220 Z"
+              fill="rgba(255,255,255,0.022)"
             />
             <path
-              d="M0,155 C260,85 500,225 740,155 C980,85 1220,225 1440,155 L1440,220 L0,220 Z"
-              fill="rgba(245,169,0,0.07)"
+              d="M0,170 C260,105 500,230 740,170 C980,105 1220,230 1440,170 L1440,220 L0,220 Z"
+              fill="rgba(245,169,0,0.03)"
             />
           </svg>
         </div>
