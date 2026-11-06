@@ -199,3 +199,60 @@ select.input-arclar {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===== Ajustes gerais de responsividade mobile ===== */
+img, video {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .header-topbar-info { display: none !important; }
+  .header-topbar { justify-content: center !important; }
+  .header-nav {
+    padding: 0 14px !important;
+    height: 62px !important;
+  }
+  .header-logo { max-width: 130px !important; }
+  .header-logo img { width: 100% !important; height: auto !important; }
+  .header-login { display: none !important; }
+  .header-acoes { gap: 6px !important; }
+  .filtros-lateral { width: 100% !important; }
+  .filtros-lateral > div { position: static !important; }
+  .tabs-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+  }
+  .tabs-scroll > button { flex: 0 0 auto; white-space: nowrap; }
+  .auth-card { padding: 24px 20px !important; }
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr !important; }
+  .painel-page { padding: 20px 12px !important; }
+  .painel-topo { padding: 20px !important; }
+  .painel-conteudo { padding: 16px !important; }
+  .imovel-galeria { height: 280px !important; }
+  .imovel-info-card { padding: 20px !important; }
+  .imovel-sidebar { position: static !important; }
+  .plano-card { transform: none !important; }
+}
+
+@media (max-width: 640px) {
+  .grid-imoveis, .grid-cidades, .grid-faq, .grid-planos, .grid-semelhantes {
+    grid-template-columns: 1fr !important;
+  }
+  .header-cta { padding: 9px 12px !important; font-size: 13px !important; }
+  .cadastro-perfis { grid-template-columns: 1fr !important; }
+  .footer-cta-title { font-size: 22px !important; }
+  .footer-bottom {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .page-hero { padding: 40px 16px !important; }
+  .page-section { padding: 40px 16px !important; }
+}
+
+@media (max-width: 420px) {
+  .header-topbar-links .header-topbar-anunciar { display: none !important; }
+  .header-cta { display: none !important; }
+  .grid-tipos { grid-template-columns: repeat(2, 1fr) !important; }
+  .painel-page { padding: 16px 10px !important; }
+}

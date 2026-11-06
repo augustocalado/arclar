@@ -27,16 +27,16 @@ export default function Header() {
     >
       {/* Barra superior */}
       <div style={{ background: '#0a1f3a', padding: '6px 0' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#F5A900', fontSize: 12, fontWeight: 500 }}>
+        <div className="header-topbar" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="header-topbar-info" style={{ color: '#F5A900', fontSize: 12, fontWeight: 500 }}>
             🏠 Mais de 50.000 imóveis em todo o Brasil
           </span>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div className="header-topbar-links" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <Link href="/links" style={{ color: '#F5A900', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>
               🔗 Nossos Links
             </Link>
             <span style={{ color: '#444' }}>|</span>
-            <Link href="/anunciar" style={{ color: '#ccc', fontSize: 12, textDecoration: 'none' }}>
+            <Link href="/anunciar" className="header-topbar-anunciar" style={{ color: '#ccc', fontSize: 12, textDecoration: 'none' }}>
               Anunciar imóvel
             </Link>
           </div>
@@ -44,10 +44,10 @@ export default function Header() {
       </div>
 
       {/* Navbar principal */}
-      <nav style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 70 }}>
+      <nav className="header-nav" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 70 }}>
         
         {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+        <Link href="/" className="header-logo" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
           <Image
             src="/logo.png"
             alt="ARC LAR - Portal Imobiliário"
@@ -88,9 +88,10 @@ export default function Header() {
         </div>
 
         {/* Ações */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="header-acoes" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link
             href="/login"
+            className="header-login"
             style={{
               color: '#e2e8f0',
               textDecoration: 'none',
@@ -106,6 +107,7 @@ export default function Header() {
           </Link>
           <Link
             href="/anunciar"
+            className="header-cta"
             style={{
               background: '#F5A900',
               color: '#102B50',

@@ -1,14 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { IMOVEIS_MOCK } from '@/lib/utils';
 import { formatarPreco } from '@/lib/utils';
 import UploadFotos from '@/components/imoveis/UploadFotos';
+import type { Lead } from '@/types';
+
+const ROTULOS_LEAD: Record<string, string> = {
+  novo: 'Novo',
+  atendimento: 'Em Atendimento',
+  visita_agendada: 'Visita Agendada',
+  proposta: 'Proposta',
+  negociacao: 'Negociação',
+  vendido: 'Vendido',
+  perdido: 'Perdido',
+};
 
 export default function PainelAnunciantePage() {
   const [tab, setTab] = useState<'imoveis' | 'cadastrar' | 'leads' | 'xml'>('imoveis');
   const [imoveis, setImoveis] = useState(IMOVEIS_MOCK);
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarDados() {
+      try {
+        const [resImoveis, resLeads] = await Promise.all([
+          fetch('/api/imoveis', { cache: 'no-store' }),
+          fetch('/api/leads', { cache: 'no-store' }),
+        ]);
+
+        if (resImoveis.ok) {
+          const dados = await resImoveis.json();
+          if (ativo && Array.isArray(dados.imoveis) && dados.imoveis.length > 0) {
+            setImoveis(dados.imoveis);
+          }
+        }
+
+        if (resLeads.ok) {
+          const dados = await resLeads.json();
+          if (ativo && Array.isArray(dados.leads)) {
+            setLeads(dados.leads);
+          }
+        }
+      } catch {
+        // Mantém os dados de exemplo quando a API não estiver disponível.
+      }
+    }
+
+    carregarDados();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   // Form de cadastro
   const [novoTitulo, setNovoTitulo] = useState('');
@@ -96,12 +143,21 @@ export default function PainelAnunciantePage() {
     }
   };
 
+  const totalCliques = imoveis.reduce(
+    (total, imovel) => total + (imovel.total_cliques_whatsapp || 0),
+    0
+  );
+  const totalVisualizacoes = imoveis.reduce(
+    (total, imovel) => total + (imovel.total_visualizacoes || imovel.visualizacoes || 0),
+    0
+  );
+
   return (
-    <div style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
+    <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         
         {/* Topo do Painel */}
-        <div style={{ background: '#102B50', borderRadius: 16, padding: '28px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div className="painel-topo" style={{ background: '#102B50', borderRadius: 16, padding: '28px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <span style={{ color: '#F5A900', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Painel Profissional</span>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>Gestão de Imóveis & CRM</h1>
@@ -123,9 +179,9 @@ export default function PainelAnunciantePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 28 }}>
           {[
             { label: 'Total de Imóveis', valor: imoveis.length, emoji: '🏠' },
-            { label: 'Cliques no WhatsApp', valor: '382', emoji: '📱' },
-            { label: 'Visualizações Totais', valor: '4.850', emoji: '👁️' },
-            { label: 'Leads no CRM', valor: '47', emoji: '📩' },
+            { label: 'Cliques no WhatsApp', valor: totalCliques.toLocaleString('pt-BR'), emoji: '📱' },
+            { label: 'Visualizações Totais', valor: totalVisualizacoes.toLocaleString('pt-BR'), emoji: '👁️' },
+            { label: 'Leads no CRM', valor: leads.length.toLocaleString('pt-BR'), emoji: '📩' },
           ].map((item, idx) => (
             <div key={idx} style={{ background: 'white', borderRadius: 12, padding: 20, border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ width: 48, height: 48, borderRadius: 10, background: '#F5F7FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
@@ -140,7 +196,7 @@ export default function PainelAnunciantePage() {
         </div>
 
         {/* Abas */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
+        <div className="tabs-scroll" style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
           {[
             { id: 'imoveis', label: 'Meus Imóveis' },
             { id: 'cadastrar', label: '+ Cadastrar Imóvel' },
@@ -175,10 +231,10 @@ export default function PainelAnunciantePage() {
 
         {/* Conteúdo Aba: Meus Imóveis */}
         {tab === 'imoveis' && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
+          <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
             <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Carteira de Imóveis</h2>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
+              <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #F0F0F0', color: '#6B7280' }}>
                     <th style={{ padding: '12px 8px' }}>Imóvel</th>
@@ -231,7 +287,7 @@ export default function PainelAnunciantePage() {
 
         {/* Conteúdo Aba: Cadastrar Imóvel */}
         {tab === 'cadastrar' && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
+          <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
             <h2 style={{ fontSize: 20, color: '#102B50', fontWeight: 800, marginBottom: 20 }}>Cadastro Gratuito de Imóvel</h2>
             <form onSubmit={handleCadastrarImovel} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
@@ -246,7 +302,7 @@ export default function PainelAnunciantePage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Finalidade</label>
                   <select value={novoNegocio} onChange={(e) => setNovoNegocio(e.target.value as 'venda' | 'aluguel')} className="input-arclar">
@@ -266,7 +322,7 @@ export default function PainelAnunciantePage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Preço (R$)</label>
                   <input
@@ -290,7 +346,7 @@ export default function PainelAnunciantePage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
+              <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Bairro</label>
                   <input
@@ -351,30 +407,42 @@ export default function PainelAnunciantePage() {
         {tab === 'leads' && (
           <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
             <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Contatos e Leads Recebidos</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { nome: 'Carlos Silva', telefone: '(11) 98877-6655', email: 'carlos@email.com', imovel: 'Apartamento Moema', status: 'Novo', data: 'Hoje às 11:30' },
-                { nome: 'Beatriz Ramos', telefone: '(13) 99765-4321', email: 'beatriz@email.com', imovel: 'Casa Praia Grande', status: 'Em Atendimento', data: 'Ontem às 16:45' },
-              ].map((lead, idx) => (
-                <div key={idx} style={{ padding: 16, border: '1px solid #E5E7EB', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, color: '#1F2937', fontSize: 15 }}>{lead.nome}</div>
-                    <div style={{ color: '#6B7280', fontSize: 13 }}>{lead.telefone} • {lead.email}</div>
-                    <div style={{ color: '#102B50', fontSize: 13, fontWeight: 600, marginTop: 4 }}>Interesse: {lead.imovel}</div>
+            {leads.length === 0 ? (
+              <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.6 }}>
+                Nenhum lead recebido ainda. Os contatos enviados pelo formulário dos imóveis aparecerão aqui.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {leads.map((lead) => (
+                  <div key={lead.id} style={{ padding: 16, border: '1px solid #E5E7EB', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#1F2937', fontSize: 15 }}>{lead.nome}</div>
+                      <div style={{ color: '#6B7280', fontSize: 13 }}>{lead.telefone} • {lead.email}</div>
+                      <div style={{ color: '#102B50', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+                        Imóvel: {lead.imovel_id.slice(0, 8)}
+                      </div>
+                      {lead.mensagem && (
+                        <div style={{ color: '#6B7280', fontSize: 12, marginTop: 4 }}>{lead.mensagem}</div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+                        {ROTULOS_LEAD[lead.status] || lead.status}
+                      </span>
+                      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
+                        {lead.criado_em ? new Date(lead.criado_em).toLocaleString('pt-BR') : ''}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>{lead.status}</span>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>{lead.data}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Conteúdo Aba: Importação XML */}
         {tab === 'xml' && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
+          <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
             <h2 style={{ fontSize: 20, color: '#102B50', fontWeight: 800, marginBottom: 12 }}>Sincronização de Feed XML</h2>
             <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
               Conecte o feed XML da sua imobiliária ou sistema CRM (compatível com os padrões VivaReal, Zap e ARC LAR).

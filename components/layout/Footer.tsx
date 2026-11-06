@@ -8,7 +8,7 @@ export default function Footer() {
       {/* CTA anunciantes */}
       <div style={{ background: '#0a1f3a', padding: '48px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <h2 style={{ color: '#F5A900', fontSize: 28, fontWeight: 800, marginBottom: 12 }}>
+          <h2 className="footer-cta-title" style={{ color: '#F5A900', fontSize: 28, fontWeight: 800, marginBottom: 12 }}>
             Anuncie seus imóveis no ARC LAR
           </h2>
           <p style={{ color: '#94a3b8', fontSize: 16, marginBottom: 28, lineHeight: 1.6 }}>
@@ -125,11 +125,11 @@ export default function Footer() {
         </div>
 
         {/* Rodapé final */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div className="footer-bottom" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <p style={{ color: '#475569', fontSize: 13, margin: 0 }}>
             © {ano} ARC LAR — Portal Imobiliário Nacional. Todos os direitos reservados.
           </p>
-          <div style={{ display: 'flex', gap: 20 }}>
+          <div className="footer-bottom-links" style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
             <Link href="/links" style={{ color: '#F5A900', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>Página de Links</Link>
             <Link href="/sitemap.xml" style={{ color: '#475569', fontSize: 13, textDecoration: 'none' }}>Sitemap XML</Link>
             <Link href="/robots.txt" style={{ color: '#475569', fontSize: 13, textDecoration: 'none' }}>Robots.txt</Link>

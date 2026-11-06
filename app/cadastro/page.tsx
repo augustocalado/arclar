@@ -14,7 +14,7 @@ export default function CadastroPage({
 
   return (
     <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F7FA', padding: 24 }}>
-      <div style={{ background: 'white', borderRadius: 16, padding: 40, width: '100%', maxWidth: 480, border: '1px solid #E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
+      <div className="auth-card" style={{ background: 'white', borderRadius: 16, padding: 40, width: '100%', maxWidth: 480, border: '1px solid #E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{ color: '#102B50', fontSize: 28, fontWeight: 900, letterSpacing: -1 }}>ARC <span style={{ color: '#F5A900' }}>LAR</span></div>
@@ -30,7 +30,7 @@ export default function CadastroPage({
         {/* Tipo de perfil */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ color: '#374151', fontSize: 14, fontWeight: 600, display: 'block', marginBottom: 10 }}>Tipo de conta</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+          <div className="cadastro-perfis" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
             {[
               { value: 'proprietario', label: '🏠 Proprietário' },
               { value: 'corretor', label: '👔 Corretor' },
@@ -46,7 +46,7 @@ export default function CadastroPage({
         </div>
 
         <form style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={{ color: '#374151', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Nome</label>
               <input type="text" placeholder="Seu nome" className="input-arclar" required />

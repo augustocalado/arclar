@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { parseXMLImoveis } from '@/lib/xml/xmlParser';
+import { importarImoveisXML } from '@/lib/supabase/imoveis';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -13,14 +16,15 @@ export async function POST(request: Request) {
       if (!feedUrl) {
         return NextResponse.json({ error: 'feedUrl é obrigatório' }, { status: 400 });
       }
-      // Faz requisição ao feed remoto
       const res = await fetch(feedUrl, { headers: { 'User-Agent': 'ARC-LAR-XML-Bot/1.0' } });
       if (!res.ok) {
-        return NextResponse.json({ error: `Falha ao acessar feed URL: ${res.statusText}` }, { status: 502 });
+        return NextResponse.json(
+          { error: `Falha ao acessar feed URL: ${res.statusText}` },
+          { status: 502 }
+        );
       }
       xmlContent = await res.text();
     } else {
-      // Recebimento de XML direto (upload)
       xmlContent = await request.text();
     }
 
@@ -29,13 +33,15 @@ export async function POST(request: Request) {
     }
 
     const imoveisExtraidos = parseXMLImoveis(xmlContent);
+    const persistencia = await importarImoveisXML(imoveisExtraidos);
 
     const resultado = {
       sucesso: true,
       totalLidos: imoveisExtraidos.length,
-      inseridos: imoveisExtraidos.length,
-      atualizados: 0,
+      inseridos: persistencia.inseridos,
+      atualizados: persistencia.atualizados,
       removidos: 0,
+      erros: persistencia.erros,
       timestamp: new Date().toISOString(),
       amostra: imoveisExtraidos.slice(0, 3),
     };
@@ -43,8 +49,9 @@ export async function POST(request: Request) {
     console.log(`[XML SYNC] Processados ${imoveisExtraidos.length} imóveis.`);
 
     return NextResponse.json(resultado);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Erro ao sincronizar feed XML' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro ao sincronizar feed XML';
+    console.error('[XML SYNC] Erro:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

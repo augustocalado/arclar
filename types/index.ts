@@ -71,6 +71,8 @@ export interface FiltrosBusca {
   cidade?: string;
   estado?: string;
   bairro?: string;
+  local?: string;
+  destaque?: boolean;
   preco_min?: number;
   preco_max?: number;
   quartos?: number;

@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import CardImovel from '@/components/imoveis/CardImovel';
-import { IMOVEIS_MOCK, formatarTipoImovel } from '@/lib/utils';
+import { formatarTipoImovel } from '@/lib/utils';
+import { listarImoveis } from '@/lib/supabase/imoveis';
+import type { TipoImovel, TipoNegocio } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | undefined }>;
@@ -34,21 +38,14 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
   const precoMax = params.preco_max ? parseInt(params.preco_max) : Infinity;
   const quartos = params.quartos ? parseInt(params.quartos) : 0;
 
-  // Filtrar imóveis (aqui usa mock; na fase final usa Supabase)
-  let imoveis = IMOVEIS_MOCK;
-  if (negocio && negocio !== 'todos') imoveis = imoveis.filter(i => i.negocio === negocio);
-  if (tipo) imoveis = imoveis.filter(i => i.tipo === tipo);
-  if (precoMin > 0) imoveis = imoveis.filter(i => i.preco >= precoMin);
-  if (precoMax < Infinity) imoveis = imoveis.filter(i => i.preco <= precoMax);
-  if (quartos > 0) imoveis = imoveis.filter(i => (i.quartos || 0) >= quartos);
-  if (local) {
-    const localLower = local.toLowerCase();
-    imoveis = imoveis.filter(i =>
-      i.endereco.cidade.toLowerCase().includes(localLower) ||
-      i.endereco.bairro.toLowerCase().includes(localLower) ||
-      i.endereco.estado.toLowerCase().includes(localLower)
-    );
-  }
+  const imoveis = await listarImoveis({
+    negocio: negocio as TipoNegocio | 'todos' | undefined,
+    tipo: tipo as TipoImovel | undefined,
+    local: local || undefined,
+    preco_min: precoMin > 0 ? precoMin : undefined,
+    preco_max: precoMax < Infinity ? precoMax : undefined,
+    quartos: quartos > 0 ? quartos : undefined,
+  });
 
   const titulo = negocio === 'aluguel'
     ? 'Imóveis para Alugar'
@@ -81,7 +78,7 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {/* Filtros laterais */}
-          <aside style={{ width: 260, flexShrink: 0 }}>
+          <aside className="filtros-lateral" style={{ width: 260, flexShrink: 0 }}>
             <div style={{ background: 'white', borderRadius: 12, padding: 24, border: '1px solid #E5E7EB', position: 'sticky', top: 100 }}>
               <h3 style={{ color: '#102B50', fontWeight: 700, fontSize: 16, marginBottom: 20 }}>🔽 Filtrar resultados</h3>
               
@@ -193,9 +190,9 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
                 </Link>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+              <div className="grid-imoveis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {imoveis.map(imovel => (
-                  <CardImovel key={imovel.id} imovel={imovel as any} />
+                  <CardImovel key={imovel.id} imovel={imovel} />
                 ))}
               </div>
             )}

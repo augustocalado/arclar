@@ -102,10 +102,11 @@ export default function PlanosPage() {
 
       {/* Cards de planos */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, alignItems: 'start' }}>
+        <div className="grid-planos" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, alignItems: 'start' }}>
           {planos.map(plano => (
             <div
               key={plano.id}
+              className="plano-card"
               style={{
                 background: 'white',
                 borderRadius: 16,
@@ -186,7 +187,7 @@ export default function PlanosPage() {
           <h2 style={{ color: '#102B50', fontSize: 24, fontWeight: 800, marginBottom: 32, textAlign: 'center' }}>
             Perguntas frequentes
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+          <div className="grid-faq" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
             {[
               { p: 'Posso cancelar a qualquer momento?', r: 'Sim! Sem fidelidade. Você pode cancelar ou mudar de plano a qualquer momento, diretamente no seu painel.' },
               { p: 'Como funciona o pagamento?', r: 'Aceitamos cartão de crédito, boleto e PIX. O plano é renovado automaticamente a cada mês.' },

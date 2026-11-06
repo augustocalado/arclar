@@ -3,7 +3,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import BuscaHero from '@/components/busca/BuscaHero';
 import CardImovel from '@/components/imoveis/CardImovel';
-import { IMOVEIS_MOCK, CIDADES_DESTAQUE } from '@/lib/utils';
+import { CIDADES_DESTAQUE } from '@/lib/utils';
+import { listarImoveis } from '@/lib/supabase/imoveis';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'ARC LAR – Seu novo endereço está aqui!',
@@ -13,9 +16,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
-  const imoveisDestaque = IMOVEIS_MOCK.filter(i => i.destaque).slice(0, 6);
-  const imoveisRecentes = IMOVEIS_MOCK.slice(0, 6);
+export default async function HomePage() {
+  const [destaques, todos] = await Promise.all([
+    listarImoveis({ destaque: true }),
+    listarImoveis(),
+  ]);
+
+  const imoveisDestaque = destaques.slice(0, 6);
+  const imoveisRecentes = todos.slice(0, 6);
 
   // Schema.org RealEstateAgent / WebSite para SEO e Google Search Console
   const jsonLd = {
@@ -110,9 +118,9 @@ export default function HomePage() {
               Ver todos os destaques →
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+          <div className="grid-imoveis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
             {imoveisDestaque.map(imovel => (
-              <CardImovel key={imovel.id} imovel={imovel as any} />
+              <CardImovel key={imovel.id} imovel={imovel} />
             ))}
           </div>
         </div>
@@ -128,7 +136,7 @@ export default function HomePage() {
             </h2>
             <p style={{ color: '#6B7280', fontSize: 15, marginTop: 8 }}>Busque oportunidades nas maiores cidades do Brasil</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+          <div className="grid-cidades" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
             {CIDADES_DESTAQUE.map(cidade => (
               <Link
                 key={cidade.slug}
@@ -168,9 +176,9 @@ export default function HomePage() {
               Ver todos os imóveis →
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+          <div className="grid-imoveis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
             {imoveisRecentes.map(imovel => (
-              <CardImovel key={imovel.id} imovel={imovel as any} />
+              <CardImovel key={imovel.id} imovel={imovel} />
             ))}
           </div>
         </div>
@@ -238,7 +246,7 @@ export default function HomePage() {
               Encontre por tipo de imóvel
             </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
+          <div className="grid-tipos" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
             {[
               { tipo: 'apartamento', label: 'Apartamentos', emoji: '🏢' },
               { tipo: 'casa', label: 'Casas', emoji: '🏠' },

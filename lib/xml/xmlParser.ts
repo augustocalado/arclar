@@ -30,7 +30,7 @@ export function parseXMLImoveis(xmlText: string): Partial<Imovel>[] {
     const negocio = transactionType.includes('rent') || transactionType.includes('aluguel') || transactionType.includes('locacao') ? 'aluguel' : 'venda';
     
     const rawTipo = (getVal('PropertyType') || getVal('Tipo') || 'Apartamento').toLowerCase();
-    let tipo: any = 'apartamento';
+    let tipo: Imovel['tipo'] = 'apartamento';
     if (rawTipo.includes('casa')) tipo = 'casa';
     else if (rawTipo.includes('terreno') || rawTipo.includes('lote')) tipo = 'terreno';
     else if (rawTipo.includes('cobertura')) tipo = 'cobertura';

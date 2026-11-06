@@ -1,9 +1,13 @@
 import { MetadataRoute } from 'next';
-import { IMOVEIS_MOCK, CIDADES_DESTAQUE } from '@/lib/utils';
+import { CIDADES_DESTAQUE } from '@/lib/utils';
+import { listarImoveis } from '@/lib/supabase/imoveis';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = 'force-dynamic';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://arclar.com.br';
   const agora = new Date();
+  const imoveis = await listarImoveis();
 
   // Rotas estáticas essenciais
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -52,7 +56,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Rotas de imóveis dinâmicos
-  const imoveisRoutes: MetadataRoute.Sitemap = IMOVEIS_MOCK.map((imovel) => ({
+  const imoveisRoutes: MetadataRoute.Sitemap = imoveis.map((imovel) => ({
     url: `${baseUrl}/imovel/${imovel.slug}`,
     lastModified: agora,
     changeFrequency: 'daily',

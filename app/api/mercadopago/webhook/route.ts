@@ -30,9 +30,10 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ received: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[MERCADO PAGO WEBHOOK ERROR]', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

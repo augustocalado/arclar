@@ -2,9 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { IMOVEIS_MOCK, formatarPreco, formatarTipoImovel, formatarArea } from '@/lib/utils';
+import { formatarPreco, formatarTipoImovel } from '@/lib/utils';
+import { buscarImovelPorSlug, listarImoveisSemelhantes } from '@/lib/supabase/imoveis';
 import BotaoWhatsApp from '@/components/imoveis/BotaoWhatsApp';
 import FormularioLead from '@/components/imoveis/FormularioLead';
+import RegistrarVisualizacao from '@/components/imoveis/RegistrarVisualizacao';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -12,7 +16,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const imovel = IMOVEIS_MOCK.find(i => i.slug === slug);
+  const imovel = await buscarImovelPorSlug(slug);
   if (!imovel) return { title: 'Imóvel não encontrado' };
 
   return {
@@ -28,13 +32,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ImovelPage({ params }: PageProps) {
   const { slug } = await params;
-  const imovel = IMOVEIS_MOCK.find(i => i.slug === slug);
+  const imovel = await buscarImovelPorSlug(slug);
   if (!imovel) notFound();
 
-  const semelhantes = IMOVEIS_MOCK.filter(i => i.id !== imovel.id && i.tipo === imovel.tipo).slice(0, 3);
+  const semelhantes = await listarImoveisSemelhantes(imovel);
 
   return (
     <div style={{ background: '#F5F7FA', minHeight: '100vh' }}>
+      <RegistrarVisualizacao imovelId={imovel.id} />
       {/* Breadcrumb */}
       <div style={{ background: '#102B50', padding: '16px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
@@ -53,12 +58,12 @@ export default async function ImovelPage({ params }: PageProps) {
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 32, alignItems: 'start' }}>
+        <div className="imovel-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 32, alignItems: 'start' }}>
           {/* Coluna principal */}
           <div>
             {/* Galeria de fotos */}
             <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', marginBottom: 24, border: '1px solid #E5E7EB' }}>
-              <div style={{ position: 'relative', height: 480, background: '#F3F4F6' }}>
+              <div className="imovel-galeria" style={{ position: 'relative', height: 480, background: '#F3F4F6' }}>
                 <Image
                   src={imovel.foto_principal || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80'}
                   alt={imovel.titulo}
@@ -94,7 +99,7 @@ export default async function ImovelPage({ params }: PageProps) {
             </div>
 
             {/* Detalhes do imóvel */}
-            <div style={{ background: 'white', borderRadius: 16, padding: 32, marginBottom: 24, border: '1px solid #E5E7EB' }}>
+            <div className="imovel-info-card" style={{ background: 'white', borderRadius: 16, padding: 32, marginBottom: 24, border: '1px solid #E5E7EB' }}>
               <div style={{ marginBottom: 20 }}>
                 <span style={{ color: '#6B7280', fontSize: 14, fontWeight: 500 }}>{formatarTipoImovel(imovel.tipo)}</span>
                 <h1 style={{ color: '#102B50', fontSize: 'clamp(20px, 3vw, 28px)', fontWeight: 800, margin: '8px 0 12px' }}>
@@ -189,7 +194,7 @@ export default async function ImovelPage({ params }: PageProps) {
             {semelhantes.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <h2 style={{ color: '#102B50', fontSize: 20, fontWeight: 800, marginBottom: 20 }}>Imóveis semelhantes</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+                <div className="grid-semelhantes" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
                   {semelhantes.map(sim => (
                     <div key={sim.id} style={{ background: 'white', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
                       <div style={{ position: 'relative', height: 160 }}>
@@ -211,7 +216,7 @@ export default async function ImovelPage({ params }: PageProps) {
           </div>
 
           {/* Coluna lateral – Contato */}
-          <div style={{ position: 'sticky', top: 100 }}>
+          <div className="imovel-sidebar" style={{ position: 'sticky', top: 100 }}>
             {/* Preço */}
             <div style={{ background: 'white', borderRadius: 16, padding: 24, marginBottom: 16, border: '2px solid #102B50', boxShadow: '0 8px 32px rgba(16,43,80,0.12)' }}>
               <div style={{ marginBottom: 20 }}>
@@ -271,14 +276,6 @@ export default async function ImovelPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Responsividade lateral */}
-      <style>{`
-        @media (max-width: 900px) {
-          div[style*="grid-template-columns: 1fr 360px"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

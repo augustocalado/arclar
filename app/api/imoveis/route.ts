@@ -1,41 +1,23 @@
 import { NextResponse } from 'next/server';
-import { IMOVEIS_MOCK } from '@/lib/utils';
-import { Imovel } from '@/types';
+import { criarImovel, listarImoveis } from '@/lib/supabase/imoveis';
+import type { TipoImovel, TipoNegocio } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const negocio = searchParams.get('negocio');
-  const tipo = searchParams.get('tipo');
-  const local = searchParams.get('local');
-  const destaque = searchParams.get('destaque');
 
-  let filtrados: Imovel[] = [...IMOVEIS_MOCK];
-
-  if (negocio && negocio !== 'todos') {
-    filtrados = filtrados.filter(i => i.negocio === negocio);
-  }
-  if (tipo) {
-    filtrados = filtrados.filter(i => i.tipo === tipo);
-  }
-  if (destaque === 'true') {
-    filtrados = filtrados.filter(i => i.destaque);
-  }
-  if (local) {
-    const l = local.toLowerCase();
-    filtrados = filtrados.filter(i =>
-      i.endereco.cidade.toLowerCase().includes(l) ||
-      i.endereco.bairro.toLowerCase().includes(l)
-    );
-  }
-
-  // Ordenação com Super Destaque e Destaque no topo
-  filtrados.sort((a, b) => {
-    const pesoA = a.nivel_destaque === 'super_destaque' ? 3 : a.destaque ? 2 : 1;
-    const pesoB = b.nivel_destaque === 'super_destaque' ? 3 : b.destaque ? 2 : 1;
-    return pesoB - pesoA;
+  const imoveis = await listarImoveis({
+    negocio: (searchParams.get('negocio') as TipoNegocio | 'todos') || undefined,
+    tipo: (searchParams.get('tipo') as TipoImovel) || undefined,
+    local: searchParams.get('local') || undefined,
+    destaque: searchParams.get('destaque') === 'true',
+    preco_min: searchParams.get('preco_min') ? Number(searchParams.get('preco_min')) : undefined,
+    preco_max: searchParams.get('preco_max') ? Number(searchParams.get('preco_max')) : undefined,
+    quartos: searchParams.get('quartos') ? Number(searchParams.get('quartos')) : undefined,
   });
 
-  return NextResponse.json({ total: filtrados.length, imoveis: filtrados });
+  return NextResponse.json({ total: imoveis.length, imoveis });
 }
 
 export async function POST(request: Request) {
@@ -46,54 +28,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Dados obrigatórios incompletos' }, { status: 400 });
     }
 
-    const slugGerado = `${data.tipo}-${data.negocio}-${(data.endereco?.cidade || 'brasil').toLowerCase().replace(/\s+/g, '-')}-${Date.now().toString().slice(-4)}`;
+    const fotos: string[] = Array.isArray(data.fotos) ? data.fotos : [];
 
-    const novoImovel: Imovel = {
-      id: `imv_${Date.now()}`,
-      slug: slugGerado,
+    const imovel = await criarImovel({
       titulo: data.titulo,
       descricao: data.descricao || '',
-      tipo: data.tipo,
-      negocio: data.negocio,
-      status: 'ativo',
-      nivel_destaque: data.nivel_destaque || 'normal',
-      destaque: data.nivel_destaque === 'destaque' || data.nivel_destaque === 'super_destaque',
-      preco: Number(data.preco),
-      preco_condominio: data.preco_condominio ? Number(data.preco_condominio) : 0,
-      preco_iptu: data.preco_iptu ? Number(data.preco_iptu) : 0,
+      tipo: data.tipo as TipoImovel,
+      negocio: data.negocio as TipoNegocio,
+      preco: Number(data.preco) || 0,
+      preco_condominio: data.preco_condominio ? Number(data.preco_condominio) : undefined,
+      preco_iptu: data.preco_iptu ? Number(data.preco_iptu) : undefined,
       area_construida: data.area_construida ? Number(data.area_construida) : undefined,
       area_total: data.area_total ? Number(data.area_total) : undefined,
-      quartos: data.quartos ? Number(data.quartos) : 0,
-      suites: data.suites ? Number(data.suites) : 0,
-      banheiros: data.banheiros ? Number(data.banheiros) : 0,
-      vagas: data.vagas ? Number(data.vagas) : 0,
-      foto_principal: data.foto_principal || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80',
-      fotos: data.fotos || [],
+      quartos: data.quartos ? Number(data.quartos) : undefined,
+      suites: data.suites ? Number(data.suites) : undefined,
+      banheiros: data.banheiros ? Number(data.banheiros) : undefined,
+      vagas: data.vagas ? Number(data.vagas) : undefined,
+      foto_principal: data.foto_principal || fotos[0],
+      fotos,
       endereco: {
         bairro: data.endereco?.bairro || 'Centro',
         cidade: data.endereco?.cidade || 'São Paulo',
         estado: data.endereco?.estado || 'São Paulo',
         estado_sigla: data.endereco?.estado_sigla || 'SP',
         cep: data.endereco?.cep || '',
+        logradouro: data.endereco?.logradouro || '',
+        numero: data.endereco?.numero || '',
+        complemento: data.endereco?.complemento || '',
       },
-      anunciante: {
-        id: data.anunciante?.id || 'anunciante_1',
-        nome: data.anunciante?.nome || 'Anunciante ARC LAR',
-        telefone: data.anunciante?.telefone || '11999999999',
-        whatsapp: data.anunciante?.whatsapp || '11999999999',
-        perfil: data.anunciante?.perfil || 'proprietario',
-      },
-      total_visualizacoes: 1,
-      total_cliques_whatsapp: 0,
-      total_leads: 0,
-      criado_em: new Date().toISOString(),
-    };
+      anunciante: data.anunciante,
+    });
 
-    console.log('[IMOVEIS] Novo imóvel cadastrado com sucesso:', novoImovel.id, novoImovel.titulo);
+    console.log('[IMOVEIS] Novo imóvel cadastrado:', imovel.id, imovel.titulo);
 
-    return NextResponse.json({ success: true, imovel: novoImovel }, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Erro ao cadastrar imóvel' }, { status: 500 });
+    return NextResponse.json({ success: true, imovel }, { status: 201 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro ao cadastrar imóvel';
+    console.error('[IMOVEIS] Erro ao cadastrar:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

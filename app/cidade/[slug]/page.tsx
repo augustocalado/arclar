@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import CardImovel from '@/components/imoveis/CardImovel';
-import { IMOVEIS_MOCK, CIDADES_DESTAQUE } from '@/lib/utils';
+import { CIDADES_DESTAQUE } from '@/lib/utils';
+import { listarImoveis } from '@/lib/supabase/imoveis';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -23,10 +26,7 @@ export default async function CidadePage({ params }: PageProps) {
   const nomeCidade = cidade?.nome || slug.replace(/-[a-z]{2}$/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   const siglaEstado = slug.split('-').pop()?.toUpperCase() || '';
 
-  const imoveis = IMOVEIS_MOCK.filter(i =>
-    i.endereco.cidade.toLowerCase().includes(nomeCidade.toLowerCase()) ||
-    i.endereco.estado_sigla.toLowerCase() === siglaEstado.toLowerCase()
-  );
+  const imoveis = await listarImoveis({ local: nomeCidade || siglaEstado });
 
   return (
     <div style={{ background: '#F5F7FA', minHeight: '100vh' }}>
@@ -70,9 +70,9 @@ export default async function CidadePage({ params }: PageProps) {
             </Link>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+          <div className="grid-imoveis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
             {imoveis.map(imovel => (
-              <CardImovel key={imovel.id} imovel={imovel as any} />
+              <CardImovel key={imovel.id} imovel={imovel} />
             ))}
           </div>
         )}

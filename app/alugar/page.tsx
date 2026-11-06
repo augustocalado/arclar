@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { IMOVEIS_MOCK } from '@/lib/utils';
+import { listarImoveis } from '@/lib/supabase/imoveis';
 import CardImovel from '@/components/imoveis/CardImovel';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Alugar Imóvel – Casas e Apartamentos para Alugar',
   description: 'Encontre casas, apartamentos e imóveis para alugar em todo o Brasil no ARC LAR.',
 };
 
-export default function AlugarPage() {
-  const imoveis = IMOVEIS_MOCK.filter(i => i.negocio === 'aluguel');
+export default async function AlugarPage() {
+  const imoveis = await listarImoveis({ negocio: 'aluguel' });
   return (
     <div style={{ background: '#F5F7FA', minHeight: '100vh' }}>
       <div style={{ background: 'linear-gradient(135deg, #102B50, #1a3f70)', padding: '48px 24px', textAlign: 'center' }}>
@@ -26,8 +28,8 @@ export default function AlugarPage() {
         </div>
       </div>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-          {imoveis.map(imovel => <CardImovel key={imovel.id} imovel={imovel as any} />)}
+        <div className="grid-imoveis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+          {imoveis.map(imovel => <CardImovel key={imovel.id} imovel={imovel} />)}
         </div>
       </div>
     </div>

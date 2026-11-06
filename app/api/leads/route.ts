@@ -1,4 +1,16 @@
 import { NextResponse } from 'next/server';
+import { criarLead, listarLeads } from '@/lib/supabase/leads';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const anuncianteId = searchParams.get('anuncianteId') || undefined;
+
+  const leads = await listarLeads(anuncianteId);
+
+  return NextResponse.json({ total: leads.length, leads });
+}
 
 export async function POST(request: Request) {
   try {
@@ -9,24 +21,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Campos obrigatórios ausentes' }, { status: 400 });
     }
 
-    const novoLead = {
-      id: `lead_${Date.now()}`,
+    const lead = await criarLead({
+      imovelId,
+      anuncianteId,
       nome,
       email,
-      telefone: telefone || '',
-      mensagem: mensagem || '',
-      imovel_id: imovelId,
-      anunciante_id: anuncianteId || 'central',
-      status: 'novo',
+      telefone,
+      mensagem,
       origem: 'formulario_imovel',
-      criado_em: new Date().toISOString(),
-    };
+    });
 
-    console.log('[CRM] Novo lead registrado com sucesso:', novoLead);
+    console.log('[CRM] Novo lead registrado:', lead.id);
 
-    return NextResponse.json({ success: true, lead: novoLead });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Erro interno' }, { status: 500 });
+    return NextResponse.json({ success: true, lead });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    console.error('[CRM] Erro ao registrar lead:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

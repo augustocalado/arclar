@@ -42,8 +42,8 @@ export default function FormularioLead({ imovelId, anuncianteId }: FormularioLea
       setEmail('');
       setTelefone('');
       setMensagem('');
-    } catch (err: any) {
-      setErro(err.message || 'Erro ao enviar. Tente pelo WhatsApp.');
+    } catch (err: unknown) {
+      setErro(err instanceof Error ? err.message : 'Erro ao enviar. Tente pelo WhatsApp.');
     } finally {
       setEnviando(false);
     }

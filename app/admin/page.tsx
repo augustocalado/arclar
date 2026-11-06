@@ -7,11 +7,11 @@ export default function AdminPage() {
   const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'xml'>('geral');
 
   return (
-    <div style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
+    <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         
         {/* Cabeçalho Admin */}
-        <div style={{ background: '#0a1f3a', borderRadius: 16, padding: '24px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div className="painel-topo" style={{ background: '#0a1f3a', borderRadius: 16, padding: '24px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <span style={{ color: '#F5A900', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>Administração Geral</span>
             <h1 style={{ fontSize: 24, fontWeight: 900, margin: '4px 0 0' }}>Painel Master ARC LAR</h1>
@@ -42,7 +42,7 @@ export default function AdminPage() {
         </div>
 
         {/* Abas de Navegação */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
+        <div className="tabs-scroll" style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
           {[
             { id: 'geral', label: 'Visão Geral' },
             { id: 'anunciantes', label: 'Anunciantes & Moderação' },
@@ -51,7 +51,7 @@ export default function AdminPage() {
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id as any)}
+              onClick={() => setTab(t.id as typeof tab)}
               style={{
                 background: 'none',
                 border: 'none',
@@ -70,7 +70,7 @@ export default function AdminPage() {
         </div>
 
         {/* Conteúdo Aba */}
-        <div style={{ background: 'white', borderRadius: 16, padding: 28, border: '1px solid #E5E7EB' }}>
+        <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 28, border: '1px solid #E5E7EB' }}>
           {tab === 'geral' && (
             <div>
               <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Status da Plataforma</h2>
@@ -84,7 +84,7 @@ export default function AdminPage() {
             <div>
               <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Anunciantes Cadastrados</h2>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
+                <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid #F0F0F0', color: '#6B7280' }}>
                       <th style={{ padding: '10px' }}>Nome Comercial</th>
