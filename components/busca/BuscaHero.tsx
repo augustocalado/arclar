@@ -25,9 +25,9 @@ export default function BuscaHero() {
   };
 
   return (
-    <div style={{ background: 'white', borderRadius: 16, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', maxWidth: 900, width: '100%', margin: '0 auto' }}>
+    <div className="busca-hero-card" style={{ background: 'white', borderRadius: 16, padding: '24px 20px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', maxWidth: 900, width: '100%', margin: '0 auto' }}>
       {/* Tabs de tipo de negócio */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#F5F5F5', borderRadius: 10, padding: 4 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#F5F5F5', borderRadius: 10, padding: 4 }}>
         {[
           { value: 'todos', label: '🏠 Todos' },
           { value: 'venda', label: '💰 Comprar' },
@@ -38,12 +38,12 @@ export default function BuscaHero() {
             onClick={() => setNegocio(tab.value as typeof negocio)}
             style={{
               flex: 1,
-              padding: '10px 16px',
+              padding: '10px 12px',
               borderRadius: 8,
               border: 'none',
               cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: 14,
+              fontWeight: 700,
+              fontSize: 13,
               transition: 'all 0.2s',
               background: negocio === tab.value ? '#102B50' : 'transparent',
               color: negocio === tab.value ? 'white' : '#6B7280',
@@ -56,20 +56,20 @@ export default function BuscaHero() {
 
       <form onSubmit={handleBuscar}>
         {/* Linha 1: Local e Tipo */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, marginBottom: 12 }}>
+        <div className="grid-busca-linha1" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginBottom: 10 }}>
           <input
             type="text"
-            placeholder="🔍  Digite a cidade, bairro ou estado..."
+            placeholder="🔍 Digite cidade, bairro ou estado..."
             value={local}
             onChange={e => setLocal(e.target.value)}
             className="input-arclar"
-            style={{ fontSize: 15, padding: '14px 18px' }}
+            style={{ fontSize: 14, padding: '12px 14px' }}
           />
           <select
             value={tipo}
             onChange={e => setTipo(e.target.value)}
-            className="input-arclar"
-            style={{ minWidth: 180 }}
+            className="input-arclar select-tipo-hero"
+            style={{ minWidth: 160 }}
           >
             <option value="">Tipo de imóvel</option>
             <option value="apartamento">Apartamento</option>
@@ -84,8 +84,8 @@ export default function BuscaHero() {
           </select>
         </div>
 
-        {/* Linha 2: Preços e Quartos */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, alignItems: 'center' }}>
+        {/* Linha 2: Preços, Quartos e Botão */}
+        <div className="grid-busca-linha2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 10, alignItems: 'center' }}>
           <select
             value={precoMin}
             onChange={e => setPrecoMin(e.target.value)}
@@ -126,23 +126,23 @@ export default function BuscaHero() {
           </select>
           <button
             type="submit"
+            className="btn-buscar-hero"
             style={{
               background: '#F5A900',
               color: '#102B50',
               border: 'none',
-              borderRadius: 10,
-              padding: '14px 32px',
+              borderRadius: 8,
+              padding: '13px 24px',
               fontWeight: 800,
-              fontSize: 15,
+              fontSize: 14,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'background 0.2s, transform 0.1s',
+              transition: 'background 0.2s',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              justifyContent: 'center',
+              gap: 6,
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#d4910a')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#F5A900')}
           >
             🔍 Buscar Imóveis
           </button>
@@ -150,14 +150,14 @@ export default function BuscaHero() {
       </form>
 
       {/* Buscas rápidas */}
-      <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ color: '#9CA3AF', fontSize: 12, fontWeight: 500 }}>Buscas populares:</span>
+      <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600 }}>Buscas populares:</span>
         {[
-          'Apartamentos em São Paulo',
-          'Casas em Praia Grande',
-          'Imóveis no Rio de Janeiro',
-          'Aluguel em Santos',
-          'Cobertura em Curitiba',
+          'São Paulo',
+          'Praia Grande',
+          'Rio de Janeiro',
+          'Santos',
+          'Curitiba',
         ].map(busca => (
           <button
             key={busca}
@@ -167,21 +167,10 @@ export default function BuscaHero() {
               color: '#374151',
               border: '1px solid #E5E7EB',
               borderRadius: 20,
-              padding: '4px 12px',
-              fontSize: 12,
+              padding: '3px 10px',
+              fontSize: 11,
               cursor: 'pointer',
-              transition: 'all 0.2s',
               fontWeight: 500,
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#102B50';
-              e.currentTarget.style.color = 'white';
-              e.currentTarget.style.borderColor = '#102B50';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = '#F5F5F5';
-              e.currentTarget.style.color = '#374151';
-              e.currentTarget.style.borderColor = '#E5E7EB';
             }}
           >
             {busca}
@@ -191,4 +180,3 @@ export default function BuscaHero() {
     </div>
   );
 }
-

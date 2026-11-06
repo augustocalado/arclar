@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { IMOVEIS_MOCK } from '@/lib/utils';
 import { formatarPreco } from '@/lib/utils';
+import UploadFotos from '@/components/imoveis/UploadFotos';
 
 export default function PainelAnunciantePage() {
   const [tab, setTab] = useState<'imoveis' | 'cadastrar' | 'leads' | 'xml'>('imoveis');
@@ -18,6 +19,7 @@ export default function PainelAnunciantePage() {
   const [novaCidade, setNovaCidade] = useState('');
   const [novoEstado, setNovoEstado] = useState('SP');
   const [novoQuartos, setNovoQuartos] = useState('2');
+  const [fotos, setFotos] = useState<string[]>([]);
   const [cadastrando, setCadastrando] = useState(false);
   const [msgSucesso, setMsgSucesso] = useState('');
 
@@ -41,6 +43,8 @@ export default function PainelAnunciantePage() {
           negocio: novoNegocio,
           preco: novoPreco,
           quartos: novoQuartos,
+          fotos,
+          foto_principal: fotos[0],
           endereco: {
             bairro: novoBairro || 'Centro',
             cidade: novaCidade || 'São Paulo',
@@ -58,6 +62,7 @@ export default function PainelAnunciantePage() {
         setNovoPreco('');
         setNovoBairro('');
         setNovaCidade('');
+        setFotos([]);
         setTab('imoveis');
       }
     } catch {
@@ -144,7 +149,7 @@ export default function PainelAnunciantePage() {
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id as any)}
+              onClick={() => setTab(t.id as typeof tab)}
               style={{
                 background: 'none',
                 border: 'none',
@@ -244,7 +249,7 @@ export default function PainelAnunciantePage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Finalidade</label>
-                  <select value={novoNegocio} onChange={(e) => setNovoNegocio(e.target.value as any)} className="input-arclar">
+                  <select value={novoNegocio} onChange={(e) => setNovoNegocio(e.target.value as 'venda' | 'aluguel')} className="input-arclar">
                     <option value="venda">Venda</option>
                     <option value="aluguel">Aluguel</option>
                   </select>
@@ -318,6 +323,8 @@ export default function PainelAnunciantePage() {
                   />
                 </div>
               </div>
+
+              <UploadFotos value={fotos} onChange={setFotos} />
 
               <button
                 type="submit"

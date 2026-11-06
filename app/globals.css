@@ -172,3 +172,30 @@ select.input-arclar {
 @media (max-width: 900px) {
   .imovel-grid { grid-template-columns: 1fr !important; }
 }
+
+@media (max-width: 640px) {
+  .busca-hero-card {
+    padding: 16px 14px !important;
+    border-radius: 12px !important;
+  }
+  .grid-busca-linha1 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-busca-linha2 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .select-tipo-hero {
+    min-width: 0 !important;
+    width: 100%;
+  }
+  .btn-buscar-hero {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .grid-busca-linha2 {
+    grid-template-columns: 1fr !important;
+  }
+}
