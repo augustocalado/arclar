@@ -3,6 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { IMOVEIS_MOCK, formatarPreco, formatarTipoImovel, formatarArea } from '@/lib/utils';
+import BotaoWhatsApp from '@/components/imoveis/BotaoWhatsApp';
+import FormularioLead from '@/components/imoveis/FormularioLead';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -244,40 +246,20 @@ export default async function ImovelPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Botão WhatsApp */}
-              <a
-                href={`https://wa.me/5511999999999?text=${encodeURIComponent(`Olá! Vi o imóvel "${imovel.titulo}" no ARC LAR e gostaria de mais informações. Código: ${imovel.id}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', background: '#25D366', color: 'white', textDecoration: 'none', padding: '14px', borderRadius: 10, fontWeight: 800, fontSize: 15, marginBottom: 10 }}
-              >
-                <span style={{ fontSize: 20 }}>📱</span> Falar via WhatsApp
-              </a>
+              {/* Botão WhatsApp com tracking e link automático */}
+              <BotaoWhatsApp
+                telefone={imovel.anunciante?.whatsapp || imovel.anunciante?.telefone}
+                tituloImovel={imovel.titulo}
+                codigoImovel={imovel.id}
+                slugImovel={imovel.slug}
+                anuncianteId={imovel.anunciante?.id}
+              />
 
-              {/* Formulário de interesse */}
-              <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #F0F0F0' }}>
-                <h3 style={{ color: '#102B50', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Tenho interesse neste imóvel</h3>
-                <form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <input type="text" placeholder="Seu nome completo" className="input-arclar" required />
-                  <input type="email" placeholder="Seu melhor e-mail" className="input-arclar" required />
-                  <input type="tel" placeholder="Seu telefone / WhatsApp" className="input-arclar" />
-                  <textarea
-                    placeholder="Mensagem (opcional)"
-                    className="input-arclar"
-                    rows={3}
-                    style={{ resize: 'vertical' }}
-                  />
-                  <button
-                    type="submit"
-                    style={{ background: '#102B50', color: 'white', border: 'none', borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'background 0.2s' }}
-                  >
-                    📩 Enviar interesse
-                  </button>
-                  <p style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', margin: 0 }}>
-                    Suas informações são protegidas. Não fazemos spam.
-                  </p>
-                </form>
-              </div>
+              {/* Formulário de interesse / CRM */}
+              <FormularioLead
+                imovelId={imovel.id}
+                anuncianteId={imovel.anunciante?.id}
+              />
             </div>
 
             {/* Código do imóvel */}

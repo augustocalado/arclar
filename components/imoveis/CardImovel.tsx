@@ -49,9 +49,11 @@ export default function CardImovel({ imovel }: CardImovelProps) {
           <span className={imovel.negocio === 'aluguel' ? 'badge-aluguel' : 'badge-venda'}>
             {imovel.negocio === 'aluguel' ? 'Aluguel' : 'Venda'}
           </span>
-          {imovel.destaque && (
+          {imovel.nivel_destaque === 'super_destaque' ? (
+            <span className="badge-destaque" style={{ background: '#E11D48', color: 'white' }}>🔥 Super Destaque</span>
+          ) : imovel.destaque ? (
             <span className="badge-destaque">⭐ Destaque</span>
-          )}
+          ) : null}
         </div>
 
         {/* Botão Favoritar */}
