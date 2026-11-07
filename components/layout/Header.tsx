@@ -7,6 +7,13 @@ import Image from 'next/image';
 export default function Header() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const estiloSublinkMobile = {
+    display: 'block',
+    color: '#cbd5e1',
+    textDecoration: 'none',
+    padding: '9px 0',
+    fontSize: 14,
+  } as const;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -32,8 +39,8 @@ export default function Header() {
             🏠 Mais de 50.000 imóveis em todo o Brasil
           </span>
           <div className="header-topbar-links" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <Link href="/links" style={{ color: '#F5A900', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>
-              🔗 Nossos Links
+            <Link href="/links-uteis" style={{ color: '#F5A900', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>
+              🔗 Links Úteis
             </Link>
             <span style={{ color: '#444' }}>|</span>
             <Link href="/anunciar" className="header-topbar-anunciar" style={{ color: '#ccc', fontSize: 12, textDecoration: 'none' }}>
@@ -66,7 +73,6 @@ export default function Header() {
             { href: '/alugar', label: 'Alugar' },
             { href: '/imoveis', label: 'Imóveis' },
             { href: '/planos', label: 'Planos' },
-            { href: '/links', label: 'Links Úteis' },
           ].map((item) => (
             <Link
               key={item.href}
@@ -85,6 +91,69 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
+
+          <div className="nav-dropdown">
+            <Link
+              href="/links-uteis"
+              className="link-nav nav-dropdown-trigger"
+              aria-haspopup="true"
+              style={{
+                color: '#e2e8f0',
+                textDecoration: 'none',
+                fontSize: 14,
+                fontWeight: 500,
+                padding: '8px 14px',
+                borderRadius: 6,
+                transition: 'color 0.2s, background 0.2s',
+              }}
+            >
+              Links Úteis
+              <span className="nav-dropdown-chevron" aria-hidden="true">
+                ▾
+              </span>
+            </Link>
+
+            <div className="nav-dropdown-menu">
+              <div className="nav-dropdown-grupo">
+                <Link href="/guias" className="nav-dropdown-titulo">
+                  Guias
+                </Link>
+                <Link href="/guias/escritura-do-imovel" className="nav-dropdown-item">
+                  Escritura do imóvel
+                </Link>
+                <Link href="/guias/lei-do-inquilino" className="nav-dropdown-item">
+                  Lei do inquilino
+                </Link>
+              </div>
+
+              <div className="nav-dropdown-grupo">
+                <Link href="/dados-e-indices" className="nav-dropdown-titulo">
+                  Dados e Índices
+                </Link>
+                <Link href="/dados-e-indices/calculadora-igpm" className="nav-dropdown-item">
+                  Calculadora IGP-M
+                </Link>
+                <Link href="/dados-e-indices/indices-reajuste-aluguel" className="nav-dropdown-item">
+                  Índices de reajuste de aluguel
+                </Link>
+                <Link href="/dados-e-indices/valor-metro-quadrado" className="nav-dropdown-item">
+                  Valor metro quadrado
+                </Link>
+                <Link href="/dados-e-indices/valor-venal" className="nav-dropdown-item">
+                  Valor venal
+                </Link>
+              </div>
+
+              <div className="nav-dropdown-grupo">
+                <Link href="/seja-corretor" className="nav-dropdown-titulo">
+                  Seja corretor
+                </Link>
+                <Link href="/links-uteis" className="nav-dropdown-item">
+                  Todos os links úteis
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Ações */}
@@ -155,7 +224,6 @@ export default function Header() {
             { href: '/alugar', label: 'Alugar' },
             { href: '/imoveis', label: 'Imóveis' },
             { href: '/planos', label: 'Planos' },
-            { href: '/links', label: 'Links Úteis' },
             { href: '/anunciar', label: 'Anunciar Imóvel' },
             { href: '/login', label: 'Entrar' },
             { href: '/cadastro', label: 'Criar Conta' },
@@ -177,6 +245,89 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
+
+          <details className="mobile-links-uteis" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <summary
+              style={{
+                color: '#e2e8f0',
+                padding: '12px 0',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Links Úteis
+            </summary>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                padding: '2px 0 12px 14px',
+                marginLeft: 2,
+                borderLeft: '2px solid rgba(245,169,0,0.4)',
+              }}
+            >
+              <Link href="/links-uteis" onClick={() => setMenuAberto(false)} style={estiloSublinkMobile}>
+                Todos os links úteis
+              </Link>
+              <Link
+                href="/guias"
+                onClick={() => setMenuAberto(false)}
+                style={{ ...estiloSublinkMobile, color: '#F5A900', fontWeight: 700, marginTop: 6 }}
+              >
+                Guias
+              </Link>
+              <Link href="/guias/escritura-do-imovel" onClick={() => setMenuAberto(false)} style={estiloSublinkMobile}>
+                Escritura do imóvel
+              </Link>
+              <Link href="/guias/lei-do-inquilino" onClick={() => setMenuAberto(false)} style={estiloSublinkMobile}>
+                Lei do inquilino
+              </Link>
+              <Link
+                href="/dados-e-indices"
+                onClick={() => setMenuAberto(false)}
+                style={{ ...estiloSublinkMobile, color: '#F5A900', fontWeight: 700, marginTop: 6 }}
+              >
+                Dados e Índices
+              </Link>
+              <Link
+                href="/dados-e-indices/calculadora-igpm"
+                onClick={() => setMenuAberto(false)}
+                style={estiloSublinkMobile}
+              >
+                Calculadora IGP-M
+              </Link>
+              <Link
+                href="/dados-e-indices/indices-reajuste-aluguel"
+                onClick={() => setMenuAberto(false)}
+                style={estiloSublinkMobile}
+              >
+                Índices de reajuste de aluguel
+              </Link>
+              <Link
+                href="/dados-e-indices/valor-metro-quadrado"
+                onClick={() => setMenuAberto(false)}
+                style={estiloSublinkMobile}
+              >
+                Valor metro quadrado
+              </Link>
+              <Link
+                href="/dados-e-indices/valor-venal"
+                onClick={() => setMenuAberto(false)}
+                style={estiloSublinkMobile}
+              >
+                Valor venal
+              </Link>
+              <Link
+                href="/seja-corretor"
+                onClick={() => setMenuAberto(false)}
+                style={{ ...estiloSublinkMobile, color: '#F5A900', fontWeight: 700, marginTop: 6 }}
+              >
+                Seja corretor
+              </Link>
+            </div>
+          </details>
         </div>
       )}
     </header>

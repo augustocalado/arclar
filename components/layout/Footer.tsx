@@ -114,42 +114,13 @@ export default function Footer() {
               <Link href="/links-uteis" className="link-footer" style={{ color: '#F5A900', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                 📚 Todos os links úteis
               </Link>
-
-              <div style={{ marginTop: 4 }}>
-                <Link href="/guias" className="link-footer" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
-                  📖 Guias
-                </Link>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
-                  <Link href="/guias/escritura-do-imovel" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
-                    Escritura do imóvel
-                  </Link>
-                  <Link href="/guias/lei-do-inquilino" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
-                    Lei do inquilino
-                  </Link>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 4 }}>
-                <Link href="/dados-e-indices" className="link-footer" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
-                  📊 Dados e Índices
-                </Link>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
-                  <Link href="/dados-e-indices/calculadora-igpm" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
-                    Calculadora IGP-M
-                  </Link>
-                  <Link href="/dados-e-indices/indices-reajuste-aluguel" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
-                    Índices de reajuste de aluguel
-                  </Link>
-                  <Link href="/dados-e-indices/valor-metro-quadrado" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
-                    Valor metro quadrado
-                  </Link>
-                  <Link href="/dados-e-indices/valor-venal" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
-                    Valor venal
-                  </Link>
-                </div>
-              </div>
-
-              <Link href="/seja-corretor" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
+              <Link href="/guias" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
+                📖 Guias
+              </Link>
+              <Link href="/dados-e-indices" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
+                📊 Dados e Índices
+              </Link>
+              <Link href="/seja-corretor" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
                 💼 Seja corretor
               </Link>
 
@@ -159,9 +130,6 @@ export default function Footer() {
                 </Link>
                 <Link href="/parceiros" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
                   🤝 Links para Parceiros
-                </Link>
-                <Link href="/imoveis" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
-                  Buscar Imóveis
                 </Link>
                 <Link href="/planos" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
                   Tabela de Planos
