@@ -56,6 +56,12 @@ export default function LinksPage() {
       external: true,
     },
     {
+      titulo: '🤝 Links para Parceiros',
+      descricao: 'Central exclusiva para imobiliárias e corretores parceiros',
+      href: '/parceiros',
+      destaque: false,
+    },
+    {
       titulo: '🔐 Entrar / Painel do Anunciante',
       descricao: 'Acesse seu painel profissional e gerencie seus anúncios',
       href: '/login',

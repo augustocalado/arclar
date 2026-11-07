@@ -1,10 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { ParceiroLead } from '@/lib/supabase/parceiros';
+
+const ROTULOS_TIPO_PARCERIA: Record<string, string> = {
+  imobiliaria: 'Imobiliária',
+  corretor: 'Corretor(a)',
+  portal: 'Portal / Divulgação',
+  outro: 'Outro',
+};
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'xml'>('geral');
+  const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'parceiros' | 'xml'>('geral');
+  const [parceiros, setParceiros] = useState<ParceiroLead[]>([]);
+  const [carregandoParceiros, setCarregandoParceiros] = useState(false);
+
+  useEffect(() => {
+    if (tab !== 'parceiros') return;
+
+    let ativo = true;
+
+    fetch('/api/parceiros', { cache: 'no-store' })
+      .then((resposta) => (resposta.ok ? resposta.json() : { leads: [] }))
+      .then((dados) => {
+        if (ativo && Array.isArray(dados.leads)) {
+          setParceiros(dados.leads);
+        }
+      })
+      .catch(() => {
+        if (ativo) setParceiros([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregandoParceiros(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [tab]);
 
   return (
     <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
@@ -47,11 +81,17 @@ export default function AdminPage() {
             { id: 'geral', label: 'Visão Geral' },
             { id: 'anunciantes', label: 'Anunciantes & Moderação' },
             { id: 'planos', label: 'Planos & Mercado Pago' },
+            { id: 'parceiros', label: 'Parceiros' },
             { id: 'xml', label: 'Feeds XML & Integrações' },
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id as typeof tab)}
+              onClick={() => {
+                if (t.id === 'parceiros' && tab !== 'parceiros') {
+                  setCarregandoParceiros(true);
+                }
+                setTab(t.id as typeof tab);
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -136,6 +176,68 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {tab === 'parceiros' && (
+            <div>
+              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 8 }}>Contatos de Parceria</h2>
+              <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20 }}>
+                Contatos enviados pelo formulário da página de parceiros.
+              </p>
+
+              {carregandoParceiros ? (
+                <p style={{ color: '#6B7280', fontSize: 14 }}>Carregando contatos...</p>
+              ) : parceiros.length === 0 ? (
+                <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.6 }}>
+                  Nenhum contato de parceria recebido ainda.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {parceiros.map((parceiro) => (
+                    <div
+                      key={parceiro.id}
+                      style={{
+                        padding: 16,
+                        border: '1px solid #E5E7EB',
+                        borderRadius: 10,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#1F2937', fontSize: 15 }}>
+                          {parceiro.nome}
+                          {parceiro.empresa ? ` — ${parceiro.empresa}` : ''}
+                        </div>
+                        <div style={{ color: '#6B7280', fontSize: 13 }}>
+                          {parceiro.telefone} • {parceiro.email}
+                        </div>
+                        <div style={{ color: '#102B50', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+                          {ROTULOS_TIPO_PARCERIA[parceiro.tipo_parceria] || parceiro.tipo_parceria}
+                          {parceiro.cidade ? ` • ${parceiro.cidade}` : ''}
+                        </div>
+                        {parceiro.mensagem && (
+                          <div style={{ color: '#6B7280', fontSize: 12, marginTop: 4 }}>
+                            {parceiro.mensagem}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+                          {parceiro.status}
+                        </span>
+                        <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
+                          {parceiro.criado_em ? new Date(parceiro.criado_em).toLocaleString('pt-BR') : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

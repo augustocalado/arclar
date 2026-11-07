@@ -53,6 +53,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/parceiros`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ];
 
   // Rotas de imóveis dinâmicos

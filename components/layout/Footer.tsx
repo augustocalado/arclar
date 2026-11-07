@@ -114,6 +114,9 @@ export default function Footer() {
               <Link href="/links" className="link-footer" style={{ color: '#F5A900', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                 🔗 Central de Links (Linktree)
               </Link>
+              <Link href="/parceiros" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
+                🤝 Links para Parceiros
+              </Link>
               <Link href="/imoveis" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
                 Buscar Imóveis
               </Link>
