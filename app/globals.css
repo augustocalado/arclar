@@ -248,6 +248,7 @@ img, video {
   }
   .page-hero { padding: 40px 16px !important; }
   .page-section { padding: 40px 16px !important; }
+  .hero-curva { height: 52px !important; }
 }
 
 @media (max-width: 420px) {

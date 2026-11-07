@@ -112,9 +112,22 @@ export default async function HomePage() {
               fill="rgba(245,169,0,0.03)"
             />
           </svg>
+
+          {/* Borda inferior curva */}
+          <svg
+            className="hero-curva"
+            viewBox="0 0 1440 120"
+            preserveAspectRatio="none"
+            style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 72, display: 'block' }}
+          >
+            <path
+              d="M0,120 L0,30 C360,112 1080,112 1440,30 L1440,120 Z"
+              fill="#ffffff"
+            />
+          </svg>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 1280, margin: '0 auto', padding: '60px 24px 48px', textAlign: 'center' }}>
+        <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 1280, margin: '0 auto', padding: '60px 24px 96px', textAlign: 'center' }}>
           <div style={{ marginBottom: 12 }}>
             <span style={{ background: 'rgba(245,169,0,0.15)', color: '#F5A900', padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 700, border: '1px solid rgba(245,169,0,0.3)', letterSpacing: 1, textTransform: 'uppercase' }}>
               Portal Imobiliário Nacional
