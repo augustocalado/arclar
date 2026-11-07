@@ -62,6 +62,18 @@ export default function LinksPage() {
       destaque: false,
     },
     {
+      titulo: '📚 Links Úteis, Guias e Índices',
+      descricao: 'Escritura, lei do inquilino, calculadora IGP-M, valor do m² e valor venal',
+      href: '/links-uteis',
+      destaque: false,
+    },
+    {
+      titulo: '💼 Seja Corretor Parceiro',
+      descricao: 'Anuncie seus imóveis e receba contatos de interessados',
+      href: '/seja-corretor',
+      destaque: false,
+    },
+    {
       titulo: '🔐 Entrar / Painel do Anunciante',
       descricao: 'Acesse seu painel profissional e gerencie seus anúncios',
       href: '/login',

@@ -59,6 +59,66 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/links-uteis`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/guias`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/guias/escritura-do-imovel`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/guias/lei-do-inquilino`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/dados-e-indices`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/dados-e-indices/calculadora-igpm`,
+      lastModified: agora,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/dados-e-indices/indices-reajuste-aluguel`,
+      lastModified: agora,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/dados-e-indices/valor-metro-quadrado`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/dados-e-indices/valor-venal`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/seja-corretor`,
+      lastModified: agora,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ];
 
   // Rotas de imóveis dinâmicos

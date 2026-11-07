@@ -105,24 +105,68 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Coluna 5 - Links rápidos & Redes */}
+          {/* Coluna 5 - Links úteis */}
           <div>
             <h3 style={{ color: 'white', fontWeight: 700, fontSize: 14, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Acesso Rápido
+              Links Úteis
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Link href="/links" className="link-footer" style={{ color: '#F5A900', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-                🔗 Central de Links (Linktree)
+              <Link href="/links-uteis" className="link-footer" style={{ color: '#F5A900', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                📚 Todos os links úteis
               </Link>
-              <Link href="/parceiros" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
-                🤝 Links para Parceiros
+
+              <div style={{ marginTop: 4 }}>
+                <Link href="/guias" className="link-footer" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                  📖 Guias
+                </Link>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
+                  <Link href="/guias/escritura-do-imovel" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
+                    Escritura do imóvel
+                  </Link>
+                  <Link href="/guias/lei-do-inquilino" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
+                    Lei do inquilino
+                  </Link>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 4 }}>
+                <Link href="/dados-e-indices" className="link-footer" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                  📊 Dados e Índices
+                </Link>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
+                  <Link href="/dados-e-indices/calculadora-igpm" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
+                    Calculadora IGP-M
+                  </Link>
+                  <Link href="/dados-e-indices/indices-reajuste-aluguel" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
+                    Índices de reajuste de aluguel
+                  </Link>
+                  <Link href="/dados-e-indices/valor-metro-quadrado" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
+                    Valor metro quadrado
+                  </Link>
+                  <Link href="/dados-e-indices/valor-venal" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.4, textDecoration: 'none' }}>
+                    Valor venal
+                  </Link>
+                </div>
+              </div>
+
+              <Link href="/seja-corretor" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
+                💼 Seja corretor
               </Link>
-              <Link href="/imoveis" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
-                Buscar Imóveis
-              </Link>
-              <Link href="/planos" className="link-footer" style={{ color: '#94a3b8', fontSize: 14, textDecoration: 'none' }}>
-                Tabela de Planos
-              </Link>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <Link href="/links" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
+                  🔗 Central de Links
+                </Link>
+                <Link href="/parceiros" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
+                  🤝 Links para Parceiros
+                </Link>
+                <Link href="/imoveis" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
+                  Buscar Imóveis
+                </Link>
+                <Link href="/planos" className="link-footer" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>
+                  Tabela de Planos
+                </Link>
+              </div>
             </div>
           </div>
         </div>
