@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { rastrearLead } from '@/lib/marketing/eventos';
 
 interface FormularioLeadProps {
   imovelId: string;
   anuncianteId?: string;
+  valor?: number;
 }
 
-export default function FormularioLead({ imovelId, anuncianteId }: FormularioLeadProps) {
+export default function FormularioLead({ imovelId, anuncianteId, valor }: FormularioLeadProps) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -38,6 +40,7 @@ export default function FormularioLead({ imovelId, anuncianteId }: FormularioLea
       if (!res.ok) throw new Error('Não foi possível enviar a mensagem no momento.');
 
       setSucesso(true);
+      rastrearLead({ imovelId, valor, tipo: 'imovel' });
       setNome('');
       setEmail('');
       setTelefone('');

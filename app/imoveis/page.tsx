@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import CardImovel from '@/components/imoveis/CardImovel';
+import EventoBusca from '@/components/marketing/EventoBusca';
 import { formatarTipoImovel } from '@/lib/utils';
 import { listarImoveis } from '@/lib/supabase/imoveis';
 import type { TipoImovel, TipoNegocio } from '@/types';
@@ -57,6 +58,13 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
 
   return (
     <div style={{ background: '#F5F7FA', minHeight: '100vh' }}>
+      <EventoBusca
+        local={local || undefined}
+        tipo={tipo}
+        negocio={negocio}
+        total={imoveis.length}
+        ids={imoveis.slice(0, 20).map((imovel) => imovel.id).join(',')}
+      />
       {/* Breadcrumb + Cabeçalho */}
       <div style={{ background: '#102B50', padding: '24px 24px 32px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>

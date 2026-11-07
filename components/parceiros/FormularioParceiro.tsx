@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { rastrearLead } from '@/lib/marketing/eventos';
 
 interface RespostaParceria {
   success: boolean;
@@ -52,6 +53,7 @@ export default function FormularioParceiro() {
       }
 
       setResultado(dados);
+      rastrearLead({ tipo: 'parceria' });
       setFormulario((atual) => ({
         ...FORMULARIO_INICIAL,
         tipoParceria: atual.tipoParceria,

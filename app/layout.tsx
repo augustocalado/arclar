@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import Remarketing from "@/components/marketing/Remarketing";
 
 export const metadata: Metadata = {
   title: {
@@ -56,6 +57,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Remarketing />
       </body>
     </html>
   );

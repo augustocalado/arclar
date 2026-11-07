@@ -7,6 +7,7 @@ import { buscarImovelPorSlug, listarImoveisSemelhantes } from '@/lib/supabase/im
 import BotaoWhatsApp from '@/components/imoveis/BotaoWhatsApp';
 import FormularioLead from '@/components/imoveis/FormularioLead';
 import RegistrarVisualizacao from '@/components/imoveis/RegistrarVisualizacao';
+import EventoImovel from '@/components/marketing/EventoImovel';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,17 @@ export default async function ImovelPage({ params }: PageProps) {
   return (
     <div style={{ background: '#F5F7FA', minHeight: '100vh' }}>
       <RegistrarVisualizacao imovelId={imovel.id} />
+      <EventoImovel
+        imovel={{
+          id: imovel.id,
+          titulo: imovel.titulo,
+          preco: imovel.preco,
+          tipo: imovel.tipo,
+          negocio: imovel.negocio,
+          cidade: imovel.endereco.cidade,
+          estado: imovel.endereco.estado_sigla,
+        }}
+      />
       {/* Breadcrumb */}
       <div style={{ background: '#102B50', padding: '16px 24px' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
@@ -258,12 +270,14 @@ export default async function ImovelPage({ params }: PageProps) {
                 codigoImovel={imovel.id}
                 slugImovel={imovel.slug}
                 anuncianteId={imovel.anunciante?.id}
+                valor={imovel.preco}
               />
 
               {/* Formulário de interesse / CRM */}
               <FormularioLead
                 imovelId={imovel.id}
                 anuncianteId={imovel.anunciante?.id}
+                valor={imovel.preco}
               />
             </div>
 

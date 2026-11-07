@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { rastrearContato } from '@/lib/marketing/eventos';
 
 interface BotaoWhatsAppProps {
   telefone?: string;
@@ -8,6 +9,7 @@ interface BotaoWhatsAppProps {
   codigoImovel: string;
   slugImovel: string;
   anuncianteId?: string;
+  valor?: number;
 }
 
 export default function BotaoWhatsApp({
@@ -16,6 +18,7 @@ export default function BotaoWhatsApp({
   codigoImovel,
   slugImovel,
   anuncianteId,
+  valor,
 }: BotaoWhatsAppProps) {
   const [clicado, setClicado] = useState(false);
 
@@ -29,6 +32,7 @@ export default function BotaoWhatsApp({
 
   const handleClick = () => {
     setClicado(true);
+    rastrearContato({ imovelId: codigoImovel, valor });
     // Notifica a API de analytics em segundo plano sem bloquear a navegação
     fetch('/api/whatsapp-click', {
       method: 'POST',
