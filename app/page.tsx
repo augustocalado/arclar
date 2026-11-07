@@ -116,12 +116,12 @@ export default async function HomePage() {
           {/* Borda inferior curva */}
           <svg
             className="hero-curva"
-            viewBox="0 0 1440 120"
+            viewBox="0 0 1440 270"
             preserveAspectRatio="none"
-            style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 72, display: 'block' }}
+            style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 270, display: 'block' }}
           >
             <path
-              d="M0,120 L0,30 C360,112 1080,112 1440,30 L1440,120 Z"
+              d="M0,225 C420,225 1020,270 1440,270 L1440,270 L0,270 Z"
               fill="#ffffff"
             />
           </svg>
