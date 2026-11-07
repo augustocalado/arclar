@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { listarImoveis } from '@/lib/supabase/imoveis';
 import CardImovel from '@/components/imoveis/CardImovel';
+import BuscaCompacta from '@/components/busca/BuscaCompacta';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,7 @@ export default async function AlugarPage() {
             Imóveis para Alugar
           </h1>
           <p style={{ color: '#94a3b8', fontSize: 16 }}>{imoveis.length} imóveis disponíveis para locação em todo o Brasil</p>
+          <BuscaCompacta negocioInicial="aluguel" />
         </div>
       </div>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px' }}>

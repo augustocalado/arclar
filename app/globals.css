@@ -257,6 +257,99 @@ img, video {
   .painel-page { padding: 16px 10px !important; }
 }
 
+/* ===== Busca compacta nas páginas internas ===== */
+.busca-compacta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 880px;
+  margin: 24px auto 0;
+  padding: 10px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.busca-compacta-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #F3F4F6;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.busca-compacta-tab {
+  border: none;
+  background: transparent;
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.busca-compacta-tab.ativo {
+  background: #102B50;
+  color: white;
+}
+
+.busca-compacta-local {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.busca-compacta-tipo {
+  flex: 0 1 190px;
+  min-width: 0;
+}
+
+.busca-compacta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 8px;
+  background: #F5A900;
+  color: #102B50;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.busca-compacta-btn:hover {
+  background: #d4910a;
+}
+
+@media (max-width: 700px) {
+  .busca-compacta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .busca-compacta-tabs {
+    width: 100%;
+  }
+  .busca-compacta-tab {
+    flex: 1;
+  }
+}
+
+@media (max-width: 420px) {
+  .busca-compacta-tab {
+    padding: 9px 6px;
+    font-size: 12px;
+  }
+}
+
 /* ===== Efeito decorativo do banner ===== */
 @keyframes heroFloat {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }

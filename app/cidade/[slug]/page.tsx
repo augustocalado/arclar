@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import CardImovel from '@/components/imoveis/CardImovel';
+import BuscaCompacta from '@/components/busca/BuscaCompacta';
 import { CIDADES_DESTAQUE } from '@/lib/utils';
 import { listarImoveis } from '@/lib/supabase/imoveis';
 
@@ -44,14 +45,7 @@ export default async function CidadePage({ params }: PageProps) {
           <p style={{ color: '#94a3b8', fontSize: 16 }}>
             {imoveis.length} {imoveis.length === 1 ? 'imóvel disponível' : 'imóveis disponíveis'} em {nomeCidade}, {siglaEstado}
           </p>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
-            <Link href={`/imoveis?negocio=venda&local=${nomeCidade}`} style={{ background: '#F5A900', color: '#102B50', textDecoration: 'none', padding: '10px 24px', borderRadius: 8, fontWeight: 700, fontSize: 14 }}>
-              🏠 Comprar em {nomeCidade}
-            </Link>
-            <Link href={`/imoveis?negocio=aluguel&local=${nomeCidade}`} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', textDecoration: 'none', padding: '10px 24px', borderRadius: 8, fontWeight: 700, fontSize: 14, border: '1px solid rgba(255,255,255,0.3)' }}>
-              🔑 Alugar em {nomeCidade}
-            </Link>
-          </div>
+          <BuscaCompacta localInicial={nomeCidade} />
         </div>
       </div>
 
