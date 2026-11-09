@@ -1,12 +1,22 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { listarPlanos } from '@/lib/supabase/planos';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Planos e Preços – Anuncie seus imóveis no ARC LAR',
   description: 'Escolha o plano ideal para anunciar seus imóveis no ARC LAR. Do plano gratuito ao plano imobiliária completo.',
 };
 
-const planos = [
+const CORES_PLANOS: Record<string, string> = {
+  gratuito: '#6B7280',
+  basico: '#102B50',
+  profissional: '#F5A900',
+  imobiliaria: '#102B50',
+};
+
+const planosFallback = [
   {
     id: 'gratuito',
     nome: 'Gratuito',
@@ -82,7 +92,34 @@ const planos = [
   },
 ];
 
-export default function PlanosPage() {
+async function montarPlanos() {
+  const planosDb = (await listarPlanos()).filter((plano) => plano.ativo);
+
+  if (planosDb.length === 0) {
+    return planosFallback;
+  }
+
+  return planosDb.map((plano) => ({
+    id: plano.id,
+    nome: plano.nome,
+    preco: plano.preco_mensal,
+    desc: plano.descricao,
+    cor: CORES_PLANOS[plano.id] || '#102B50',
+    destaque: plano.id === 'profissional',
+    features: plano.features,
+    nao_incluso: [
+      plano.destaque_incluso === 0 ? 'Destaques' : null,
+      !plano.crm ? 'CRM' : null,
+      !plano.importacao_xml ? 'Importação XML' : null,
+      !plano.relatorios ? 'Relatórios avançados' : null,
+      !plano.multi_usuarios ? 'Múltiplos usuários' : null,
+    ].filter((item): item is string => Boolean(item)),
+  }));
+}
+
+export default async function PlanosPage() {
+  const planos = await montarPlanos();
+
   return (
     <div style={{ background: '#F5F7FA', minHeight: '100vh' }}>
       {/* Header */}

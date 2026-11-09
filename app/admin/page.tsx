@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { CONFIGURACOES_SITE_PADRAO, type ConfiguracoesSite } from '@/lib/configuracoes';
 import type { ParceiroLead } from '@/lib/supabase/parceiros';
+import type { Plano } from '@/lib/planos';
 import type { AnuncianteItem } from '@/app/api/anunciantes/route';
 import type { NivelHierarquico, UsuarioAutenticado } from '@/types';
 import { DESCRICAO_NIVEIS, podeAcessarAdmin } from '@/lib/auth/permissoes';
@@ -41,6 +42,13 @@ export default function AdminPage() {
   const [anuncianteEditando, setAnuncianteEditando] = useState<AnuncianteItem | null>(null);
   const [salvandoAnunciante, setSalvandoAnunciante] = useState(false);
   const [mensagemAnunciante, setMensagemAnunciante] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+
+  // Estados da aba de Planos
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [carregandoPlanos, setCarregandoPlanos] = useState(false);
+  const [planoEditando, setPlanoEditando] = useState<Plano | null>(null);
+  const [salvandoPlano, setSalvandoPlano] = useState(false);
+  const [mensagemPlano, setMensagemPlano] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
   // Campos do formulário de anunciante
   const [formNome, setFormNome] = useState('');
@@ -115,6 +123,25 @@ export default function AdminPage() {
     if (tab !== 'anunciantes') return;
     carregarListaAnunciantes();
   }, [tab]);
+
+  // Carregar planos
+  useEffect(() => {
+    if (tab !== 'planos') return;
+    carregarPlanos();
+  }, [tab]);
+
+  function carregarPlanos() {
+    setCarregandoPlanos(true);
+    fetch('/api/planos', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : { planos: [] }))
+      .then((dados) => {
+        if (Array.isArray(dados.planos)) {
+          setPlanos(dados.planos);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCarregandoPlanos(false));
+  }
 
   function carregarListaAnunciantes() {
     setCarregandoAnunciantes(true);
@@ -260,6 +287,45 @@ export default function AdminPage() {
       carregarListaAnunciantes();
     } catch {
       alert('Erro ao excluir o anunciante.');
+    }
+  }
+
+  function abrirModalPlano(plano: Plano) {
+    setPlanoEditando({ ...plano, features: [...plano.features] });
+    setMensagemPlano(null);
+  }
+
+  function atualizarCampoPlano<K extends keyof Plano>(campo: K, valor: Plano[K]) {
+    setPlanoEditando((atual) => (atual ? { ...atual, [campo]: valor } : atual));
+  }
+
+  async function handleSalvarPlano(evento: FormEvent) {
+    evento.preventDefault();
+
+    if (!planoEditando) return;
+
+    setSalvandoPlano(true);
+    setMensagemPlano(null);
+
+    try {
+      const res = await fetch('/api/planos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(planoEditando),
+      });
+      const dados = await res.json();
+
+      if (!res.ok) throw new Error(dados.error || 'Erro ao salvar plano.');
+
+      setMensagemPlano({ tipo: 'sucesso', texto: 'Plano atualizado com sucesso.' });
+      carregarPlanos();
+    } catch (err) {
+      setMensagemPlano({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao salvar plano.',
+      });
+    } finally {
+      setSalvandoPlano(false);
     }
   }
 
@@ -684,24 +750,101 @@ export default function AdminPage() {
 
           {tab === 'planos' && (
             <div>
-              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Gestão de Planos & Cobrança</h2>
-              <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20 }}>
-                Integração configurada com a API oficial do Mercado Pago para assinaturas recorrentes e destaques avulsos.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-                {[
-                  { nome: 'Gratuito', preco: 'R$ 0/mês', limite: 'Até 3 imóveis' },
-                  { nome: 'Básico', preco: 'R$ 89/mês', limite: 'Até 20 imóveis' },
-                  { nome: 'Profissional', preco: 'R$ 249/mês', limite: 'Até 100 imóveis + XML' },
-                  { nome: 'Imobiliária', preco: 'R$ 549/mês', limite: 'Ilimitado + Multi-usuários' },
-                ].map((p, idx) => (
-                  <div key={idx} style={{ padding: 16, borderRadius: 10, border: '1px solid #E5E7EB', background: '#F8FAFC' }}>
-                    <div style={{ fontWeight: 800, color: '#102B50' }}>{p.nome}</div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#F5A900', margin: '6px 0' }}>{p.preco}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280' }}>{p.limite}</div>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, margin: 0 }}>Gestão de Planos & Cobrança</h2>
+                  <p style={{ color: '#6B7280', fontSize: 14, margin: '4px 0 0' }}>
+                    Edite nome, descrição, preço, limites e recursos dos planos exibidos no portal.
+                  </p>
+                </div>
+                <button
+                  onClick={carregarPlanos}
+                  style={{
+                    background: '#F1F5F9',
+                    color: '#475569',
+                    border: 'none',
+                    padding: '9px 16px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Atualizar lista
+                </button>
               </div>
+
+              {mensagemPlano && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    marginBottom: 16,
+                    fontSize: 13,
+                    background: mensagemPlano.tipo === 'sucesso' ? '#ECFDF5' : '#FEF2F2',
+                    color: mensagemPlano.tipo === 'sucesso' ? '#065F46' : '#991B1B',
+                  }}
+                >
+                  {mensagemPlano.texto}
+                </div>
+              )}
+
+              {carregandoPlanos ? (
+                <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>
+                  Carregando planos...
+                </div>
+              ) : planos.length === 0 ? (
+                <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>
+                  Nenhum plano encontrado.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+                  {planos.map((plano) => (
+                    <div key={plano.id} style={{ padding: 16, borderRadius: 10, border: '1px solid #E5E7EB', background: '#F8FAFC' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ fontWeight: 800, color: '#102B50' }}>{plano.nome}</div>
+                        <span
+                          style={{
+                            background: plano.ativo ? '#ECFDF5' : '#FEE2E2',
+                            color: plano.ativo ? '#065F46' : '#991B1B',
+                            padding: '2px 8px',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {plano.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: '#F5A900', margin: '6px 0' }}>
+                        R$ {plano.preco_mensal.toLocaleString('pt-BR')}/mês
+                      </div>
+                      <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
+                        {plano.limite_imoveis >= 9999 ? 'Imóveis ilimitados' : `Até ${plano.limite_imoveis} imóveis`}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>
+                        {plano.destaque_incluso} destaques • {plano.super_destaque_incluso} super destaques
+                      </div>
+                      <button
+                        onClick={() => abrirModalPlano(plano)}
+                        style={{
+                          background: '#102B50',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 14px',
+                          borderRadius: 8,
+                          fontWeight: 700,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          width: '100%',
+                        }}
+                      >
+                        Editar plano
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1199,6 +1342,234 @@ export default function AdminPage() {
                   }}
                 >
                   {salvandoAnunciante ? 'Salvando...' : anuncianteEditando ? 'Salvar Alterações' : 'Cadastrar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PARA EDITAR PLANO */}
+      {planoEditando && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 680,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: 28,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 19, color: '#102B50', fontWeight: 800, margin: 0 }}>
+                Editar plano: {planoEditando.nome}
+              </h2>
+              <button
+                onClick={() => setPlanoEditando(null)}
+                style={{ background: 'none', border: 'none', fontSize: 22, color: '#94a3b8', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {mensagemPlano && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  fontSize: 13,
+                  background: mensagemPlano.tipo === 'sucesso' ? '#ECFDF5' : '#FEF2F2',
+                  color: mensagemPlano.tipo === 'sucesso' ? '#065F46' : '#991B1B',
+                }}
+              >
+                {mensagemPlano.texto}
+              </div>
+            )}
+
+            <form onSubmit={handleSalvarPlano} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Nome do plano *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={planoEditando.nome}
+                    onChange={(e) => atualizarCampoPlano('nome', e.target.value)}
+                    className="input-arclar"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Descrição
+                  </label>
+                  <input
+                    type="text"
+                    value={planoEditando.descricao}
+                    onChange={(e) => atualizarCampoPlano('descricao', e.target.value)}
+                    className="input-arclar"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Preço mensal (R$)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={planoEditando.preco_mensal}
+                    onChange={(e) => atualizarCampoPlano('preco_mensal', Number(e.target.value))}
+                    className="input-arclar"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Preço anual (R$)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={planoEditando.preco_anual}
+                    onChange={(e) => atualizarCampoPlano('preco_anual', Number(e.target.value))}
+                    className="input-arclar"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Limite de imóveis
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={planoEditando.limite_imoveis}
+                    onChange={(e) => atualizarCampoPlano('limite_imoveis', Number(e.target.value))}
+                    className="input-arclar"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Destaques inclusos
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={planoEditando.destaque_incluso}
+                    onChange={(e) => atualizarCampoPlano('destaque_incluso', Number(e.target.value))}
+                    className="input-arclar"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Super destaques inclusos
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={planoEditando.super_destaque_incluso}
+                    onChange={(e) => atualizarCampoPlano('super_destaque_incluso', Number(e.target.value))}
+                    className="input-arclar"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+                {[
+                  { campo: 'multi_usuarios', rotulo: 'Múltiplos usuários' },
+                  { campo: 'crm', rotulo: 'CRM de leads' },
+                  { campo: 'importacao_xml', rotulo: 'Importação XML' },
+                  { campo: 'relatorios', rotulo: 'Relatórios' },
+                  { campo: 'ativo', rotulo: 'Plano ativo no site' },
+                ].map((item) => (
+                  <label
+                    key={item.campo}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', fontWeight: 600 }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={planoEditando[item.campo as 'multi_usuarios' | 'crm' | 'importacao_xml' | 'relatorios' | 'ativo']}
+                      onChange={(e) =>
+                        atualizarCampoPlano(
+                          item.campo as 'multi_usuarios' | 'crm' | 'importacao_xml' | 'relatorios' | 'ativo',
+                          e.target.checked
+                        )
+                      }
+                    />
+                    {item.rotulo}
+                  </label>
+                ))}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                  Itens inclusos (um por linha)
+                </label>
+                <textarea
+                  rows={5}
+                  value={planoEditando.features.join('\n')}
+                  onChange={(e) => atualizarCampoPlano('features', e.target.value.split('\n'))}
+                  className="input-arclar"
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setPlanoEditando(null)}
+                  style={{
+                    background: '#F1F5F9',
+                    color: '#475569',
+                    border: 'none',
+                    padding: '11px 20px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoPlano}
+                  style={{
+                    background: '#102B50',
+                    color: 'white',
+                    border: 'none',
+                    padding: '11px 24px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: salvandoPlano ? 'not-allowed' : 'pointer',
+                    opacity: salvandoPlano ? 0.7 : 1,
+                  }}
+                >
+                  {salvandoPlano ? 'Salvando...' : 'Salvar plano'}
                 </button>
               </div>
             </form>
