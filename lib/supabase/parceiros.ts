@@ -60,6 +60,22 @@ function mapParceiroLead(row: ParceiroLeadRow): ParceiroLead {
   };
 }
 
+let parceirosEmMemoria: ParceiroLead[] = [
+  {
+    id: 'parceiro-demo-1',
+    nome: 'Ana Paula Mendes',
+    email: 'ana.paula@imobiliariaorla.com.br',
+    telefone: '(13) 99876-5432',
+    empresa: 'Imobiliária Orla',
+    cidade: 'Santos / SP',
+    tipo_parceria: 'imobiliaria',
+    mensagem:
+      'Temos cerca de 40 imóveis na Baixada Santista e queremos anunciar no ARC LAR com condições de parceria.',
+    status: 'novo',
+    criado_em: '2026-11-08T14:30:00Z',
+  },
+];
+
 function parceiroLeadSimulado(input: NovoParceiroLeadInput): ParceiroLead {
   return {
     id: `parceiro_${Date.now()}`,
@@ -116,8 +132,10 @@ export async function criarParceiroLead(
   input: NovoParceiroLeadInput
 ): Promise<{ lead: ParceiroLead; persistido: boolean }> {
   if (!isSupabaseConfigured()) {
-    console.warn('[SUPABASE] Contato de parceria não persistido (Supabase não configurado).');
-    return { lead: parceiroLeadSimulado(input), persistido: false };
+    console.warn('[SUPABASE] Supabase não configurado. Contato de parceria salvo em memória.');
+    const lead = parceiroLeadSimulado(input);
+    parceirosEmMemoria = [lead, ...parceirosEmMemoria];
+    return { lead, persistido: true };
   }
 
   const admin = createSupabaseAdminClient();
@@ -139,7 +157,7 @@ export async function listarParceirosLeads(): Promise<ParceiroLead[]> {
   const client = createSupabaseAdminClient() ?? createSupabaseAnonClient();
 
   if (!client || !isSupabaseConfigured()) {
-    return [];
+    return parceirosEmMemoria;
   }
 
   const { data, error } = await client

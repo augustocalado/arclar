@@ -291,6 +291,23 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <Link
+              href="/parceiros"
+              style={{
+                background: '#F5A900',
+                color: '#102B50',
+                textDecoration: 'none',
+                fontWeight: 800,
+                fontSize: 15,
+                padding: '14px 32px',
+                borderRadius: 10,
+                display: 'inline-block',
+              }}
+            >
+              🤝 Quero ser parceiro
+            </Link>
+          </div>
         </div>
       </section>
 

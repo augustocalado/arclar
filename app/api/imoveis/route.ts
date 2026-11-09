@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { criarImovel, listarImoveis } from '@/lib/supabase/imoveis';
+import {
+  atualizarImovel,
+  criarImovel,
+  excluirImovel,
+  listarImoveis,
+} from '@/lib/supabase/imoveis';
 import type { TipoImovel, TipoNegocio } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -65,6 +70,64 @@ export async function POST(request: Request) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro ao cadastrar imóvel';
     console.error('[IMOVEIS] Erro ao cadastrar:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const data = await request.json();
+
+    if (!data.id) {
+      return NextResponse.json({ error: 'ID do imóvel é obrigatório.' }, { status: 400 });
+    }
+
+    const imovel = await atualizarImovel(String(data.id), {
+      titulo: data.titulo,
+      descricao: data.descricao,
+      tipo: data.tipo as TipoImovel | undefined,
+      negocio: data.negocio as TipoNegocio | undefined,
+      preco: data.preco !== undefined ? Number(data.preco) : undefined,
+      quartos: data.quartos !== undefined ? Number(data.quartos) : undefined,
+      suites: data.suites !== undefined ? Number(data.suites) : undefined,
+      banheiros: data.banheiros !== undefined ? Number(data.banheiros) : undefined,
+      vagas: data.vagas !== undefined ? Number(data.vagas) : undefined,
+      foto_principal: data.foto_principal,
+      fotos: Array.isArray(data.fotos) ? data.fotos : undefined,
+      endereco: data.endereco,
+    });
+
+    if (!imovel) {
+      return NextResponse.json({ error: 'Imóvel não encontrado.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, imovel });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro ao atualizar imóvel';
+    console.error('[IMOVEIS] Erro ao atualizar:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID do imóvel é obrigatório.' }, { status: 400 });
+    }
+
+    const removido = await excluirImovel(id);
+
+    if (!removido) {
+      return NextResponse.json({ error: 'Imóvel não encontrado.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, id });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro ao excluir imóvel';
+    console.error('[IMOVEIS] Erro ao excluir:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { IMOVEIS_MOCK } from '@/lib/utils';
 import { formatarPreco } from '@/lib/utils';
 import UploadFotos from '@/components/imoveis/UploadFotos';
-import type { Lead, UsuarioAutenticado } from '@/types';
+import type { Imovel, Lead, UsuarioAutenticado } from '@/types';
 import { podeAcessarPainelCorretor } from '@/lib/auth/permissoes';
 import BarraNivelHierarquico from '@/components/auth/BarraNivelHierarquico';
 
@@ -98,6 +98,11 @@ export default function PainelAnunciantePage() {
   const [cadastrando, setCadastrando] = useState(false);
   const [msgSucesso, setMsgSucesso] = useState('');
 
+  // Edição de imóvel
+  const [imovelEditando, setImovelEditando] = useState<Imovel | null>(null);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [erroEdicao, setErroEdicao] = useState('');
+
   // XML
   const [urlFeed, setUrlFeed] = useState('');
   const [sincronizandoXml, setSincronizandoXml] = useState(false);
@@ -144,6 +149,92 @@ export default function PainelAnunciantePage() {
       alert('Erro ao cadastrar imóvel');
     } finally {
       setCadastrando(false);
+    }
+  };
+
+  const abrirEdicaoImovel = (imovel: Imovel) => {
+    setImovelEditando({ ...imovel, endereco: { ...imovel.endereco } });
+    setErroEdicao('');
+  };
+
+  const atualizarCampoEdicao = <K extends keyof Imovel>(campo: K, valor: Imovel[K]) => {
+    setImovelEditando((atual) => (atual ? { ...atual, [campo]: valor } : atual));
+  };
+
+  const atualizarEnderecoEdicao = (campo: keyof Imovel['endereco'], valor: string) => {
+    setImovelEditando((atual) =>
+      atual ? { ...atual, endereco: { ...atual.endereco, [campo]: valor } } : atual
+    );
+  };
+
+  const handleSalvarEdicao = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!imovelEditando) return;
+
+    setSalvandoEdicao(true);
+    setErroEdicao('');
+
+    try {
+      const res = await fetch('/api/imoveis', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: imovelEditando.id,
+          titulo: imovelEditando.titulo,
+          tipo: imovelEditando.tipo,
+          negocio: imovelEditando.negocio,
+          preco: imovelEditando.preco,
+          quartos: imovelEditando.quartos,
+          banheiros: imovelEditando.banheiros,
+          vagas: imovelEditando.vagas,
+          endereco: {
+            bairro: imovelEditando.endereco.bairro,
+            cidade: imovelEditando.endereco.cidade,
+            estado: imovelEditando.endereco.estado,
+            estado_sigla: imovelEditando.endereco.estado_sigla,
+          },
+        }),
+      });
+
+      const dados = await res.json();
+
+      if (!res.ok) {
+        throw new Error(dados.error || 'Erro ao atualizar imóvel.');
+      }
+
+      const atualizado = dados.imovel as Imovel;
+      setImoveis((anteriores) =>
+        anteriores.map((item) => (item.id === atualizado.id ? atualizado : item))
+      );
+      setImovelEditando(null);
+      setMsgSucesso('Imóvel atualizado com sucesso!');
+    } catch (err) {
+      setErroEdicao(err instanceof Error ? err.message : 'Erro ao atualizar imóvel.');
+    } finally {
+      setSalvandoEdicao(false);
+    }
+  };
+
+  const handleExcluirImovel = async (imovel: Imovel) => {
+    if (!confirm(`Tem certeza que deseja excluir o imóvel "${imovel.titulo}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/imoveis?id=${encodeURIComponent(imovel.id)}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const dados = await res.json().catch(() => ({}));
+        throw new Error(dados.error || 'Erro ao excluir imóvel.');
+      }
+
+      setImoveis((anteriores) => anteriores.filter((item) => item.id !== imovel.id));
+      setMsgSucesso('Imóvel excluído com sucesso!');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao excluir imóvel.');
     }
   };
 
@@ -360,10 +451,41 @@ export default function PainelAnunciantePage() {
                         <td style={{ padding: '14px 8px' }}>
                           <span style={{ background: '#ECFDF5', color: '#065F46', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>Ativo</span>
                         </td>
-                        <td style={{ padding: '14px 8px', textAlign: 'right' }}>
-                          <Link href={`/imovel/${imv.slug}`} style={{ color: '#102B50', fontWeight: 700, textDecoration: 'none', fontSize: 13 }}>
+                        <td style={{ padding: '14px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <Link href={`/imovel/${imv.slug}`} style={{ color: '#102B50', fontWeight: 700, textDecoration: 'none', fontSize: 13, marginRight: 10 }}>
                             Ver →
                           </Link>
+                          <button
+                            onClick={() => abrirEdicaoImovel(imv)}
+                            style={{
+                              background: '#F5A900',
+                              color: '#102B50',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: 6,
+                              fontWeight: 700,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              marginRight: 6,
+                            }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleExcluirImovel(imv)}
+                            style={{
+                              background: '#EF4444',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: 6,
+                              fontWeight: 600,
+                              fontSize: 12,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Excluir
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -576,6 +698,193 @@ export default function PainelAnunciantePage() {
 
         </div>
       </div>
+
+      {imovelEditando && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 640,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: 28,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 19, color: '#102B50', fontWeight: 800, margin: 0 }}>
+                Editar imóvel
+              </h2>
+              <button
+                onClick={() => setImovelEditando(null)}
+                style={{ background: 'none', border: 'none', fontSize: 22, color: '#94a3b8', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {erroEdicao && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  fontSize: 13,
+                  background: '#FEF2F2',
+                  color: '#991B1B',
+                }}
+              >
+                {erroEdicao}
+              </div>
+            )}
+
+            <form onSubmit={handleSalvarEdicao} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Título do Anúncio</label>
+                <input
+                  type="text"
+                  className="input-arclar"
+                  required
+                  value={imovelEditando.titulo}
+                  onChange={(e) => atualizarCampoEdicao('titulo', e.target.value)}
+                />
+              </div>
+
+              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Finalidade</label>
+                  <select
+                    value={imovelEditando.negocio}
+                    onChange={(e) => atualizarCampoEdicao('negocio', e.target.value as Imovel['negocio'])}
+                    className="input-arclar"
+                  >
+                    <option value="venda">Venda</option>
+                    <option value="aluguel">Aluguel</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Tipo de Imóvel</label>
+                  <select
+                    value={imovelEditando.tipo}
+                    onChange={(e) => atualizarCampoEdicao('tipo', e.target.value as Imovel['tipo'])}
+                    className="input-arclar"
+                  >
+                    <option value="apartamento">Apartamento</option>
+                    <option value="casa">Casa</option>
+                    <option value="cobertura">Cobertura</option>
+                    <option value="terreno">Terreno</option>
+                    <option value="comercial">Comercial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Preço (R$)</label>
+                  <input
+                    type="number"
+                    className="input-arclar"
+                    min={0}
+                    required
+                    value={imovelEditando.preco}
+                    onChange={(e) => atualizarCampoEdicao('preco', Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Quartos</label>
+                  <input
+                    type="number"
+                    className="input-arclar"
+                    min={0}
+                    value={imovelEditando.quartos}
+                    onChange={(e) => atualizarCampoEdicao('quartos', Number(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Bairro</label>
+                  <input
+                    type="text"
+                    className="input-arclar"
+                    value={imovelEditando.endereco.bairro}
+                    onChange={(e) => atualizarEnderecoEdicao('bairro', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Cidade</label>
+                  <input
+                    type="text"
+                    className="input-arclar"
+                    value={imovelEditando.endereco.cidade}
+                    onChange={(e) => atualizarEnderecoEdicao('cidade', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>UF</label>
+                  <input
+                    type="text"
+                    className="input-arclar"
+                    maxLength={2}
+                    value={imovelEditando.endereco.estado_sigla}
+                    onChange={(e) => atualizarEnderecoEdicao('estado_sigla', e.target.value.toUpperCase())}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setImovelEditando(null)}
+                  style={{
+                    background: '#F1F5F9',
+                    color: '#475569',
+                    border: 'none',
+                    padding: '11px 20px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoEdicao}
+                  style={{
+                    background: '#102B50',
+                    color: 'white',
+                    border: 'none',
+                    padding: '11px 24px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: salvandoEdicao ? 'not-allowed' : 'pointer',
+                    opacity: salvandoEdicao ? 0.7 : 1,
+                  }}
+                >
+                  {salvandoEdicao ? 'Salvando...' : 'Salvar alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

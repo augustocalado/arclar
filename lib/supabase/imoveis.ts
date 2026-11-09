@@ -171,6 +171,8 @@ export function mapRowImovel(row: ImovelRow): Imovel {
   };
 }
 
+let imoveisEmMemoria: Imovel[] = IMOVEIS_MOCK.map((imovel) => ({ ...imovel }));
+
 function ordenarPorDestaque(imoveis: Imovel[]): Imovel[] {
   const peso = (imovel: Imovel) =>
     imovel.nivel_destaque === 'super_destaque' ? 3 : imovel.destaque ? 2 : 1;
@@ -179,7 +181,7 @@ function ordenarPorDestaque(imoveis: Imovel[]): Imovel[] {
 }
 
 function filtrarMock(filtros: FiltrosBusca = {}): Imovel[] {
-  let imoveis = [...IMOVEIS_MOCK];
+  let imoveis = [...imoveisEmMemoria];
 
   if (filtros.negocio && filtros.negocio !== 'todos') {
     imoveis = imoveis.filter((imovel) => imovel.negocio === filtros.negocio);
@@ -265,7 +267,7 @@ export async function buscarImovelPorSlug(slug: string): Promise<Imovel | null> 
   const client = createSupabaseReadClient();
 
   if (!client) {
-    return IMOVEIS_MOCK.find((imovel) => imovel.slug === slug) ?? null;
+    return imoveisEmMemoria.find((imovel) => imovel.slug === slug) ?? null;
   }
 
   const { data, error } = await client
@@ -276,7 +278,7 @@ export async function buscarImovelPorSlug(slug: string): Promise<Imovel | null> 
 
   if (error) {
     console.warn('[SUPABASE] Falha ao buscar imóvel, usando dados mockados:', error.message);
-    return IMOVEIS_MOCK.find((imovel) => imovel.slug === slug) ?? null;
+    return imoveisEmMemoria.find((imovel) => imovel.slug === slug) ?? null;
   }
 
   return data ? mapRowImovel(data as unknown as ImovelRow) : null;
@@ -286,7 +288,7 @@ export async function listarImoveisSemelhantes(imovel: Imovel, limite = 3): Prom
   const client = createSupabaseReadClient();
 
   if (!client) {
-    return IMOVEIS_MOCK.filter(
+    return imoveisEmMemoria.filter(
       (item) => item.id !== imovel.id && item.tipo === imovel.tipo
     ).slice(0, limite);
   }
@@ -301,7 +303,7 @@ export async function listarImoveisSemelhantes(imovel: Imovel, limite = 3): Prom
 
   if (error) {
     console.warn('[SUPABASE] Falha ao buscar imóveis semelhantes:', error.message);
-    return IMOVEIS_MOCK.filter(
+    return imoveisEmMemoria.filter(
       (item) => item.id !== imovel.id && item.tipo === imovel.tipo
     ).slice(0, limite);
   }
@@ -481,8 +483,10 @@ export async function criarImovel(input: NovoImovelInput): Promise<Imovel> {
   const admin = createSupabaseReadClient();
 
   if (!admin || !isSupabaseConfigured()) {
-    console.warn('[SUPABASE] Não configurado. Imóvel será retornado apenas em memória.');
-    return montarImovelSimulado(input);
+    console.warn('[SUPABASE] Não configurado. Imóvel será salvo apenas em memória.');
+    const simulado = montarImovelSimulado(input);
+    imoveisEmMemoria = [simulado, ...imoveisEmMemoria];
+    return simulado;
   }
 
   const insert = montarInsert(input);
@@ -493,6 +497,125 @@ export async function criarImovel(input: NovoImovelInput): Promise<Imovel> {
   }
 
   return mapRowImovel(data as unknown as ImovelRow);
+}
+
+export interface AtualizarImovelInput {
+  titulo?: string;
+  descricao?: string;
+  tipo?: TipoImovel;
+  negocio?: TipoNegocio;
+  preco?: number;
+  quartos?: number;
+  suites?: number;
+  banheiros?: number;
+  vagas?: number;
+  foto_principal?: string;
+  fotos?: string[];
+  endereco?: {
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    estado_sigla?: string;
+    cep?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+  };
+}
+
+export async function atualizarImovel(
+  id: string,
+  input: AtualizarImovelInput
+): Promise<Imovel | null> {
+  const admin = createSupabaseReadClient();
+
+  if (!admin || !isSupabaseConfigured()) {
+    const indice = imoveisEmMemoria.findIndex((imovel) => imovel.id === id);
+
+    if (indice === -1) {
+      return null;
+    }
+
+    const atual = imoveisEmMemoria[indice];
+    const atualizado: Imovel = {
+      ...atual,
+      titulo: input.titulo ?? atual.titulo,
+      descricao: input.descricao ?? atual.descricao,
+      tipo: input.tipo ?? atual.tipo,
+      negocio: input.negocio ?? atual.negocio,
+      preco: input.preco ?? atual.preco,
+      quartos: input.quartos ?? atual.quartos,
+      suites: input.suites ?? atual.suites,
+      banheiros: input.banheiros ?? atual.banheiros,
+      vagas: input.vagas ?? atual.vagas,
+      foto_principal: input.foto_principal ?? atual.foto_principal,
+      fotos: input.fotos ?? atual.fotos,
+      endereco: input.endereco ? { ...atual.endereco, ...input.endereco } : atual.endereco,
+      atualizado_em: new Date().toISOString(),
+    };
+
+    imoveisEmMemoria = imoveisEmMemoria.map((imovel) =>
+      imovel.id === id ? atualizado : imovel
+    );
+
+    return atualizado;
+  }
+
+  const payload: Record<string, unknown> = { atualizado_em: new Date().toISOString() };
+
+  if (input.titulo !== undefined) payload.titulo = input.titulo;
+  if (input.descricao !== undefined) payload.descricao = input.descricao;
+  if (input.tipo !== undefined) payload.tipo = input.tipo;
+  if (input.negocio !== undefined) payload.negocio = input.negocio;
+  if (input.preco !== undefined) payload.preco = input.preco;
+  if (input.quartos !== undefined) payload.quartos = input.quartos;
+  if (input.suites !== undefined) payload.suites = input.suites;
+  if (input.banheiros !== undefined) payload.banheiros = input.banheiros;
+  if (input.vagas !== undefined) payload.vagas = input.vagas;
+  if (input.foto_principal !== undefined) payload.foto_principal = input.foto_principal;
+  if (input.fotos !== undefined) payload.fotos = input.fotos;
+
+  if (input.endereco) {
+    if (input.endereco.bairro !== undefined) payload.bairro = input.endereco.bairro;
+    if (input.endereco.cidade !== undefined) payload.cidade = input.endereco.cidade;
+    if (input.endereco.estado !== undefined) payload.estado = input.endereco.estado;
+    if (input.endereco.estado_sigla !== undefined) payload.estado_sigla = input.endereco.estado_sigla;
+    if (input.endereco.cep !== undefined) payload.cep = input.endereco.cep;
+    if (input.endereco.logradouro !== undefined) payload.logradouro = input.endereco.logradouro;
+    if (input.endereco.numero !== undefined) payload.numero = input.endereco.numero;
+    if (input.endereco.complemento !== undefined) payload.complemento = input.endereco.complemento;
+  }
+
+  const { data, error } = await admin
+    .from('imoveis')
+    .update(payload)
+    .eq('id', id)
+    .select(SELECT_IMOVEL)
+    .single();
+
+  if (error) {
+    throw new Error(`Erro ao atualizar imóvel no Supabase: ${error.message}`);
+  }
+
+  return data ? mapRowImovel(data as unknown as ImovelRow) : null;
+}
+
+export async function excluirImovel(id: string): Promise<boolean> {
+  const admin = createSupabaseReadClient();
+
+  if (!admin || !isSupabaseConfigured()) {
+    const antes = imoveisEmMemoria.length;
+    imoveisEmMemoria = imoveisEmMemoria.filter((imovel) => imovel.id !== id);
+    return imoveisEmMemoria.length < antes;
+  }
+
+  const { error } = await admin.from('imoveis').delete().eq('id', id);
+
+  if (error) {
+    throw new Error(`Erro ao excluir imóvel no Supabase: ${error.message}`);
+  }
+
+  return true;
 }
 
 export interface ResultadoImportacao {
