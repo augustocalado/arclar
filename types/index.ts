@@ -1,4 +1,16 @@
-export type TipoImovel = 'apartamento' | 'casa' | 'terreno' | 'comercial' | 'cobertura' | 'studio' | 'flat' | 'sala' | 'galpao' | 'chacara';
+export type TipoImovel =
+  | 'apartamento'
+  | 'casa'
+  | 'terreno'
+  | 'comercial'
+  | 'cobertura'
+  | 'studio'
+  | 'flat'
+  | 'sala'
+  | 'galpao'
+  | 'chacara'
+  | 'sitio'
+  | 'fazenda';
 export type TipoNegocio = 'venda' | 'aluguel';
 export type StatusImovel = 'ativo' | 'inativo' | 'vendido' | 'alugado' | 'pendente';
 export type NivelDestaque = 'normal' | 'destaque' | 'super_destaque';

@@ -44,6 +44,8 @@ export function formatarTipoImovel(tipo: string): string {
     sala: 'Sala Comercial',
     galpao: 'Galpão',
     chacara: 'Chácara',
+    sitio: 'Sítio',
+    fazenda: 'Fazenda',
   };
   return mapa[tipo] || tipo;
 }

@@ -127,6 +127,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Rotas por categorias segmentadas (Comprar, Alugar, Imóveis)
+  const tiposCategorias = [
+    'casa',
+    'apartamento',
+    'chacara',
+    'sitio',
+    'fazenda',
+    'terreno',
+    'cobertura',
+    'comercial',
+    'galpao',
+  ];
+
+  const categoriasRoutes: MetadataRoute.Sitemap = tiposCategorias.flatMap((tipo) => [
+    {
+      url: `${baseUrl}/comprar/${tipo}`,
+      lastModified: agora,
+      changeFrequency: 'daily',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/alugar/${tipo}`,
+      lastModified: agora,
+      changeFrequency: 'daily',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/imoveis/${tipo}`,
+      lastModified: agora,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+  ]);
+
   // Rotas de imóveis dinâmicos
   const imoveisRoutes: MetadataRoute.Sitemap = imoveis.map((imovel) => ({
     url: `${baseUrl}/imovel/${imovel.slug}`,
@@ -143,6 +177,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
-  return [...staticRoutes, ...imoveisRoutes, ...cidadesRoutes];
+  return [...staticRoutes, ...categoriasRoutes, ...imoveisRoutes, ...cidadesRoutes];
 }
 
