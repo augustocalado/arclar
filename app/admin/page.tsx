@@ -5,6 +5,13 @@ import Link from 'next/link';
 import { CONFIGURACOES_SITE_PADRAO, type ConfiguracoesSite } from '@/lib/configuracoes';
 import type { ParceiroLead } from '@/lib/supabase/parceiros';
 import type { AnuncianteItem } from '@/app/api/anunciantes/route';
+import type { NivelHierarquico, UsuarioAutenticado } from '@/types';
+import { DESCRICAO_NIVEIS, podeAcessarAdmin } from '@/lib/auth/permissoes';
+import BarraNivelHierarquico from '@/components/auth/BarraNivelHierarquico';
+
+type PerfilAnunciante = AnuncianteItem['perfil'];
+type StatusAnunciante = AnuncianteItem['status'];
+type PlanoStatusAnunciante = AnuncianteItem['plano_status'];
 
 const ROTULOS_TIPO_PARCERIA: Record<string, string> = {
   imobiliaria: 'Imobiliária',
@@ -14,6 +21,10 @@ const ROTULOS_TIPO_PARCERIA: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  // Controle de Sessão e Nível Hierárquico (RBAC)
+  const [usuarioSessao, setUsuarioSessao] = useState<UsuarioAutenticado | null>(null);
+  const [carregandoSessao, setCarregandoSessao] = useState(true);
+
   const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'parceiros' | 'redes' | 'xml'>('geral');
   const [parceiros, setParceiros] = useState<ParceiroLead[]>([]);
   const [carregandoParceiros, setCarregandoParceiros] = useState(false);
@@ -38,9 +49,28 @@ export default function AdminPage() {
   const [formTelefone, setFormTelefone] = useState('');
   const [formWhatsapp, setFormWhatsapp] = useState('');
   const [formCreci, setFormCreci] = useState('');
-  const [formPerfil, setFormPerfil] = useState<'imobiliaria' | 'corretor' | 'proprietario'>('imobiliaria');
+  const [formNivel, setFormNivel] = useState<NivelHierarquico>('corretor');
+  const [formPerfil, setFormPerfil] = useState<'imobiliaria' | 'corretor' | 'proprietario' | 'admin_master' | 'cliente'>('imobiliaria');
   const [formPlano, setFormPlano] = useState('Profissional');
+  const [formPlanoStatus, setFormPlanoStatus] = useState<PlanoStatusAnunciante>('ativo');
   const [formStatus, setFormStatus] = useState<'Ativo' | 'Pendente' | 'Bloqueado'>('Ativo');
+
+  // Carregar dados de sessão do usuário logado
+  useEffect(() => {
+    let ativo = true;
+    fetch('/api/auth/sessao', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((dados) => {
+        if (ativo && dados?.usuario) {
+          setUsuarioSessao(dados.usuario);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (ativo) setCarregandoSessao(false);
+      });
+    return () => { ativo = false; };
+  }, []);
 
   // Carregar parceiros
   useEffect(() => {
@@ -107,8 +137,10 @@ export default function AdminPage() {
     setFormTelefone('');
     setFormWhatsapp('');
     setFormCreci('');
+    setFormNivel('corretor');
     setFormPerfil('imobiliaria');
     setFormPlano('Profissional');
+    setFormPlanoStatus('ativo');
     setFormStatus('Ativo');
     setMensagemAnunciante(null);
     setModalAberto(true);
@@ -122,8 +154,10 @@ export default function AdminPage() {
     setFormTelefone(a.telefone || '');
     setFormWhatsapp(a.whatsapp || '');
     setFormCreci(a.creci || '');
-    setFormPerfil(a.perfil);
+    setFormNivel(a.nivel || (a.perfil === 'admin_master' ? 'admin_master' : a.perfil === 'proprietario' ? 'cliente' : 'corretor'));
+    setFormPerfil(a.perfil as PerfilAnunciante);
     setFormPlano(a.plano);
+    setFormPlanoStatus(a.plano_status || 'ativo');
     setFormStatus(a.status);
     setMensagemAnunciante(null);
     setModalAberto(true);
@@ -142,8 +176,10 @@ export default function AdminPage() {
       telefone: formTelefone,
       whatsapp: formWhatsapp,
       creci: formCreci,
+      nivel: formNivel,
       perfil: formPerfil,
       plano: formPlano,
+      plano_status: formPlanoStatus,
       status: formStatus,
     };
 
@@ -159,10 +195,55 @@ export default function AdminPage() {
 
       setModalAberto(false);
       carregarListaAnunciantes();
-    } catch (err: any) {
-      setMensagemAnunciante({ tipo: 'erro', texto: err.message || 'Erro ao processar.' });
+    } catch (err) {
+      setMensagemAnunciante({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao processar.',
+      });
     } finally {
       setSalvandoAnunciante(false);
+    }
+  }
+
+  async function handleAprovarAnunciante(item: AnuncianteItem) {
+    try {
+      const res = await fetch('/api/anunciantes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          nivel: item.nivel,
+          perfil: item.perfil,
+          status: 'Ativo',
+        }),
+      });
+      if (!res.ok) throw new Error('Não foi possível aprovar.');
+      carregarListaAnunciantes();
+    } catch {
+      alert('Erro ao aprovar o anunciante.');
+    }
+  }
+
+  async function handleConfirmarPlano(item: AnuncianteItem) {
+    if (!confirm(`Confirmar o pagamento e ativar o plano "${item.plano}" de "${item.nome_comercial}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/anunciantes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          plano: item.plano,
+          plano_status: 'ativo',
+          status: 'Ativo',
+        }),
+      });
+      if (!res.ok) throw new Error('Não foi possível confirmar o plano.');
+      carregarListaAnunciantes();
+    } catch {
+      alert('Erro ao confirmar o plano.');
     }
   }
 
@@ -227,13 +308,85 @@ export default function AdminPage() {
       a.nome.toLowerCase().includes(busca) ||
       a.nome_comercial.toLowerCase().includes(busca) ||
       a.email.toLowerCase().includes(busca) ||
-      (a.creci && a.creci.toLowerCase().includes(busca))
+      (a.creci && a.creci.toLowerCase().includes(busca)) ||
+      (a.nivel && a.nivel.toLowerCase().includes(busca))
     );
   });
 
+  // Verificação de Nível Hierárquico: se não for Admin Master, bloqueia o acesso
+  if (!carregandoSessao && (!usuarioSessao || !podeAcessarAdmin(usuarioSessao.nivel))) {
+    const isCorretor = usuarioSessao?.nivel === 'corretor';
+    return (
+      <div>
+        <BarraNivelHierarquico onNivelAlterado={() => window.location.reload()} />
+        <div style={{ minHeight: '85vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '40px 32px', maxWidth: 520, width: '100%', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: 54, marginBottom: 12 }}>🔒</div>
+            <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Acesso Restrito
+            </span>
+            <h1 style={{ color: '#0F172A', fontSize: 24, fontWeight: 900, marginTop: 14, marginBottom: 8 }}>
+              Painel Exclusivo de Admin Master
+            </h1>
+            <p style={{ color: '#64748B', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+              {isCorretor ? (
+                <>
+                  Você está logado como <strong>Corretor / Imobiliária</strong>. O acesso a configurações globais, planos de pagamento e dados de outros corretores é restrito à administração geral. Seu painel dedicado de imóveis e leads está disponível abaixo.
+                </>
+              ) : (
+                <>
+                  Você está logado como <strong>Cliente / Comprador</strong>. O Painel Master é exclusivo para os administradores da plataforma ARC LAR.
+                </>
+              )}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {isCorretor && (
+                <Link
+                  href="/painel"
+                  style={{
+                    background: '#102B50',
+                    color: 'white',
+                    padding: '14px 20px',
+                    borderRadius: 8,
+                    fontWeight: 800,
+                    fontSize: 15,
+                    textDecoration: 'none',
+                    display: 'block',
+                  }}
+                >
+                  👔 Ir para Meu Painel de Corretor →
+                </Link>
+              )}
+              <Link
+                href="/"
+                style={{
+                  background: isCorretor ? '#F1F5F9' : '#102B50',
+                  color: isCorretor ? '#334155' : 'white',
+                  padding: '12px 20px',
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  textDecoration: 'none',
+                  display: 'block',
+                }}
+              >
+                Voltar para a Página Inicial
+              </Link>
+            </div>
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #F1F5F9', fontSize: 12, color: '#94A3B8' }}>
+              💡 <em>Dica de desenvolvimento: Use a barra superior escura para alternar o papel para <strong>👑 Master</strong> e visualizar a administração.</em>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div>
+      <BarraNivelHierarquico onNivelAlterado={() => window.location.reload()} />
+      <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         
         {/* Cabeçalho Admin */}
         <div className="painel-topo" style={{ background: '#0a1f3a', borderRadius: 16, padding: '24px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
@@ -366,10 +519,11 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
+                  <table style={{ width: '100%', minWidth: 780, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
                     <thead>
                       <tr style={{ borderBottom: '2px solid #F0F0F0', color: '#6B7280' }}>
                         <th style={{ padding: '12px 10px' }}>Nome / Razão Social</th>
+                        <th style={{ padding: '12px 10px' }}>Nível Hierárquico</th>
                         <th style={{ padding: '12px 10px' }}>Contato / WhatsApp</th>
                         <th style={{ padding: '12px 10px' }}>Perfil / CRECI</th>
                         <th style={{ padding: '12px 10px' }}>Plano</th>
@@ -378,25 +532,44 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {anunciantesFiltrados.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid #F0F0F0' }}>
-                          <td style={{ padding: '12px 10px' }}>
-                            <div style={{ fontWeight: 700, color: '#102B50' }}>{item.nome_comercial}</div>
-                            <div style={{ fontSize: 12, color: '#6B7280' }}>{item.nome} • {item.email}</div>
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>
-                            <div style={{ color: '#1F2937' }}>{item.whatsapp || item.telefone || '—'}</div>
-                            {item.whatsapp && (
-                              <a
-                                href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ fontSize: 11, color: '#059669', textDecoration: 'none', fontWeight: 600 }}
+                      {anunciantesFiltrados.map((item) => {
+                        const nivelItem = item.nivel || (item.perfil === 'admin_master' ? 'admin_master' : item.perfil === 'proprietario' ? 'cliente' : 'corretor');
+                        const infoNivel = DESCRICAO_NIVEIS[nivelItem] || DESCRICAO_NIVEIS.corretor;
+
+                        return (
+                          <tr key={item.id} style={{ borderBottom: '1px solid #F0F0F0' }}>
+                            <td style={{ padding: '12px 10px' }}>
+                              <div style={{ fontWeight: 700, color: '#102B50' }}>{item.nome_comercial}</div>
+                              <div style={{ fontSize: 12, color: '#6B7280' }}>{item.nome} • {item.email}</div>
+                            </td>
+                            <td style={{ padding: '12px 10px' }}>
+                              <span
+                                style={{
+                                  background: infoNivel.bg,
+                                  color: infoNivel.cor,
+                                  padding: '4px 8px',
+                                  borderRadius: 6,
+                                  fontSize: 12,
+                                  fontWeight: 800,
+                                  display: 'inline-block',
+                                }}
                               >
-                                💬 Abrir WhatsApp
-                              </a>
-                            )}
-                          </td>
+                                {infoNivel.badge}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 10px' }}>
+                              <div style={{ color: '#1F2937' }}>{item.whatsapp || item.telefone || '—'}</div>
+                              {item.whatsapp && (
+                                <a
+                                  href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ fontSize: 11, color: '#059669', textDecoration: 'none', fontWeight: 600 }}
+                                >
+                                  💬 Abrir WhatsApp
+                                </a>
+                              )}
+                            </td>
                           <td style={{ padding: '12px 10px' }}>
                             <div style={{ textTransform: 'capitalize', fontWeight: 600, color: '#374151' }}>
                               {item.perfil}
@@ -407,8 +580,14 @@ export default function AdminPage() {
                               <div style={{ fontSize: 12, color: '#9CA3AF' }}>Sem CRECI</div>
                             )}
                           </td>
-                          <td style={{ padding: '12px 10px', fontWeight: 700, color: '#102B50' }}>
-                            {item.plano}
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ fontWeight: 700, color: '#102B50' }}>{item.plano}</div>
+                            {item.plano_status === 'pendente' && (
+                              <div style={{ fontSize: 11, color: '#B45309', fontWeight: 700 }}>Pagamento a confirmar</div>
+                            )}
+                            {item.plano_status === 'cancelado' && (
+                              <div style={{ fontSize: 11, color: '#991B1B', fontWeight: 700 }}>Cancelado</div>
+                            )}
                           </td>
                           <td style={{ padding: '12px 10px' }}>
                             <span
@@ -425,6 +604,42 @@ export default function AdminPage() {
                             </span>
                           </td>
                           <td style={{ padding: '12px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            {item.status === 'Pendente' && (
+                              <button
+                                onClick={() => handleAprovarAnunciante(item)}
+                                style={{
+                                  background: '#059669',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '6px 10px',
+                                  borderRadius: 6,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  marginRight: 6,
+                                }}
+                              >
+                                Aprovar
+                              </button>
+                            )}
+                            {item.plano_status === 'pendente' && (
+                              <button
+                                onClick={() => handleConfirmarPlano(item)}
+                                style={{
+                                  background: '#0EA5E9',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '6px 10px',
+                                  borderRadius: 6,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  marginRight: 6,
+                                }}
+                              >
+                                Confirmar plano
+                              </button>
+                            )}
                             <button
                               onClick={() => abrirModalEditar(item)}
                               style={{
@@ -458,7 +673,8 @@ export default function AdminPage() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -515,7 +731,6 @@ export default function AdminPage() {
                         <th style={{ padding: '10px 8px' }}>Tipo</th>
                         <th style={{ padding: '10px 8px' }}>Contato</th>
                         <th style={{ padding: '10px 8px' }}>Localidade</th>
-                        <th style={{ padding: '10px 8px' }}>Imóveis</th>
                         <th style={{ padding: '10px 8px' }}>Mensagem</th>
                         <th style={{ padding: '10px 8px' }}>Data</th>
                       </tr>
@@ -531,7 +746,7 @@ export default function AdminPage() {
                           </td>
                           <td style={{ padding: '10px 8px' }}>
                             <span style={{ background: '#f1f5f9', color: '#334155', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
-                              {ROTULOS_TIPO_PARCERIA[item.tipo] || item.tipo}
+                              {ROTULOS_TIPO_PARCERIA[item.tipo_parceria] || item.tipo_parceria}
                             </span>
                           </td>
                           <td style={{ padding: '10px 8px' }}>
@@ -539,9 +754,8 @@ export default function AdminPage() {
                             <div style={{ color: '#059669', fontWeight: 600 }}>{item.telefone}</div>
                           </td>
                           <td style={{ padding: '10px 8px' }}>
-                            {item.cidade ? `${item.cidade}${item.estado ? ` - ${item.estado}` : ''}` : '—'}
+                            {item.cidade || '—'}
                           </td>
-                          <td style={{ padding: '10px 8px', color: '#64748b' }}>{item.volume_imoveis || '—'}</td>
                           <td style={{ padding: '10px 8px', maxWidth: 220, color: '#334155' }} title={item.mensagem || ''}>
                             {item.mensagem ? (
                               <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -597,39 +811,26 @@ export default function AdminPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
                     <div>
                       <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#102B50', marginBottom: 6 }}>
-                        Telefone Principal
+                        Atendimento Humano
                       </label>
                       <input
                         type="text"
-                        value={configuracoes.telefone}
-                        onChange={(e) => atualizarConfiguracao('telefone', e.target.value)}
-                        placeholder="(11) 3456-7890"
+                        value={configuracoes.atendimento_humano}
+                        onChange={(e) => atualizarConfiguracao('atendimento_humano', e.target.value)}
+                        placeholder="Seg a sex, das 8h às 18h"
                         className="input-arclar"
                       />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#102B50', marginBottom: 6 }}>
-                        WhatsApp (apenas dígitos com DDD)
+                        Atendimento Virtual
                       </label>
                       <input
                         type="text"
-                        value={configuracoes.whatsapp}
-                        onChange={(e) => atualizarConfiguracao('whatsapp', e.target.value)}
-                        placeholder="5511999999999"
-                        className="input-arclar"
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#102B50', marginBottom: 6 }}>
-                        E-mail de Contato
-                      </label>
-                      <input
-                        type="email"
-                        value={configuracoes.email}
-                        onChange={(e) => atualizarConfiguracao('email', e.target.value)}
-                        placeholder="contato@arclar.com.br"
+                        value={configuracoes.atendimento_virtual}
+                        onChange={(e) => atualizarConfiguracao('atendimento_virtual', e.target.value)}
+                        placeholder="Atendimento virtual 24h"
                         className="input-arclar"
                       />
                     </div>
@@ -660,8 +861,8 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="url"
-                          value={configuracoes.instagram_url}
-                          onChange={(e) => atualizarConfiguracao('instagram_url', e.target.value)}
+                          value={configuracoes.instagram}
+                          onChange={(e) => atualizarConfiguracao('instagram', e.target.value)}
                           placeholder="https://www.instagram.com/seu_perfil"
                           className="input-arclar"
                         />
@@ -673,8 +874,8 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="url"
-                          value={configuracoes.facebook_url}
-                          onChange={(e) => atualizarConfiguracao('facebook_url', e.target.value)}
+                          value={configuracoes.facebook}
+                          onChange={(e) => atualizarConfiguracao('facebook', e.target.value)}
                           placeholder="https://www.facebook.com/sua_pagina"
                           className="input-arclar"
                         />
@@ -686,8 +887,8 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="url"
-                          value={configuracoes.tiktok_url}
-                          onChange={(e) => atualizarConfiguracao('tiktok_url', e.target.value)}
+                          value={configuracoes.tiktok}
+                          onChange={(e) => atualizarConfiguracao('tiktok', e.target.value)}
                           placeholder="https://www.tiktok.com/@seu_perfil"
                           className="input-arclar"
                         />
@@ -699,8 +900,8 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="url"
-                          value={configuracoes.google_url}
-                          onChange={(e) => atualizarConfiguracao('google_url', e.target.value)}
+                          value={configuracoes.google}
+                          onChange={(e) => atualizarConfiguracao('google', e.target.value)}
                           placeholder="https://g.page/seu_negocio"
                           className="input-arclar"
                         />
@@ -883,17 +1084,40 @@ export default function AdminPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                 <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#102B50', marginBottom: 4 }}>
+                    Nível Hierárquico *
+                  </label>
+                  <select
+                    value={formNivel}
+                    onChange={(e) => {
+                      const nv = e.target.value as NivelHierarquico;
+                      setFormNivel(nv);
+                      if (nv === 'admin_master') setFormPerfil('admin_master');
+                      else if (nv === 'cliente') setFormPerfil('proprietario');
+                      else setFormPerfil('corretor');
+                    }}
+                    className="input-arclar"
+                    style={{ fontWeight: 700 }}
+                  >
+                    <option value="corretor">👔 Corretor / Imobiliária</option>
+                    <option value="admin_master">👑 Admin Master</option>
+                    <option value="cliente">👤 Cliente / Proprietário</option>
+                  </select>
+                </div>
+                <div>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
                     Tipo de Perfil
                   </label>
                   <select
                     value={formPerfil}
-                    onChange={(e) => setFormPerfil(e.target.value as any)}
+                    onChange={(e) => setFormPerfil(e.target.value as PerfilAnunciante)}
                     className="input-arclar"
                   >
                     <option value="imobiliaria">Imobiliária</option>
                     <option value="corretor">Corretor(a)</option>
                     <option value="proprietario">Proprietário(a)</option>
+                    <option value="admin_master">Diretoria / Master</option>
+                    <option value="cliente">Cliente Final</option>
                   </select>
                 </div>
                 <div>
@@ -909,6 +1133,21 @@ export default function AdminPage() {
                     <option value="Básico">Básico (Até 20)</option>
                     <option value="Profissional">Profissional (Até 100)</option>
                     <option value="Imobiliária">Imobiliária (Ilimitado)</option>
+                    <option value="Corporativo">Corporativo / Master</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                    Status do Plano
+                  </label>
+                  <select
+                    value={formPlanoStatus}
+                    onChange={(e) => setFormPlanoStatus(e.target.value as PlanoStatusAnunciante)}
+                    className="input-arclar"
+                  >
+                    <option value="ativo">Ativo (pagamento confirmado)</option>
+                    <option value="pendente">Pendente (aguardando pagamento)</option>
+                    <option value="cancelado">Cancelado</option>
                   </select>
                 </div>
                 <div>
@@ -917,7 +1156,7 @@ export default function AdminPage() {
                   </label>
                   <select
                     value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value as any)}
+                    onChange={(e) => setFormStatus(e.target.value as StatusAnunciante)}
                     className="input-arclar"
                   >
                     <option value="Ativo">Ativo (Aprovado)</option>
@@ -967,6 +1206,7 @@ export default function AdminPage() {
         </div>
       )}
 
-    </div>
+        </div>
+      </div>
   );
 }

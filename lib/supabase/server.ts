@@ -25,6 +25,14 @@ export function createSupabaseAnonClient(): SupabaseClient | null {
   return anonClient;
 }
 
+export function createSupabaseServiceClient(): SupabaseClient {
+  const client = createSupabaseAdminClient();
+  if (!client) {
+    throw new Error('Supabase com service role não está configurado.');
+  }
+  return client;
+}
+
 export function createSupabaseAdminClient(): SupabaseClient | null {
   if (adminClient) return adminClient;
 

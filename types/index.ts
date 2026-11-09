@@ -14,7 +14,35 @@ export type TipoImovel =
 export type TipoNegocio = 'venda' | 'aluguel';
 export type StatusImovel = 'ativo' | 'inativo' | 'vendido' | 'alugado' | 'pendente';
 export type NivelDestaque = 'normal' | 'destaque' | 'super_destaque';
-export type PerfilUsuario = 'admin' | 'imobiliaria' | 'corretor' | 'proprietario' | 'interessado';
+
+// Nível hierárquico formal do sistema (RBAC)
+export type NivelHierarquico = 'admin_master' | 'corretor' | 'cliente';
+
+export type PerfilUsuario =
+  | 'admin_master'
+  | 'admin'
+  | 'imobiliaria'
+  | 'corretor'
+  | 'proprietario'
+  | 'comprador'
+  | 'locatario'
+  | 'cliente'
+  | 'interessado';
+
+export interface UsuarioAutenticado {
+  id: string;
+  nome: string;
+  email: string;
+  nivel: NivelHierarquico;
+  perfil: PerfilUsuario;
+  nome_comercial?: string;
+  telefone?: string;
+  whatsapp?: string;
+  creci?: string;
+  ativo: boolean;
+  criado_em?: string;
+}
+
 export type StatusLead = 'novo' | 'atendimento' | 'visita_agendada' | 'proposta' | 'negociacao' | 'vendido' | 'perdido';
 
 export interface Endereco {

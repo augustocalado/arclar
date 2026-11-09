@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { IMOVEIS_MOCK } from '@/lib/utils';
 import { formatarPreco } from '@/lib/utils';
 import UploadFotos from '@/components/imoveis/UploadFotos';
-import type { Lead } from '@/types';
+import type { Lead, UsuarioAutenticado } from '@/types';
+import { podeAcessarPainelCorretor } from '@/lib/auth/permissoes';
+import BarraNivelHierarquico from '@/components/auth/BarraNivelHierarquico';
 
 const ROTULOS_LEAD: Record<string, string> = {
   novo: 'Novo',
@@ -18,9 +20,35 @@ const ROTULOS_LEAD: Record<string, string> = {
 };
 
 export default function PainelAnunciantePage() {
+  const [usuarioSessao, setUsuarioSessao] = useState<UsuarioAutenticado | null>(null);
+  const [carregandoSessao, setCarregandoSessao] = useState(true);
+
   const [tab, setTab] = useState<'imoveis' | 'cadastrar' | 'leads' | 'xml'>('imoveis');
   const [imoveis, setImoveis] = useState(IMOVEIS_MOCK);
   const [leads, setLeads] = useState<Lead[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarSessao() {
+      try {
+        const res = await fetch('/api/auth/sessao', { cache: 'no-store' });
+        if (res.ok) {
+          const dados = await res.json();
+          if (ativo && dados?.usuario) {
+            setUsuarioSessao(dados.usuario);
+          }
+        }
+      } catch {
+        // Ignora
+      } finally {
+        if (ativo) setCarregandoSessao(false);
+      }
+    }
+
+    carregarSessao();
+    return () => { ativo = false; };
+  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -152,340 +180,401 @@ export default function PainelAnunciantePage() {
     0
   );
 
-  return (
-    <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        
-        {/* Topo do Painel */}
-        <div className="painel-topo" style={{ background: '#102B50', borderRadius: 16, padding: '28px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <span style={{ color: '#F5A900', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Painel Profissional</span>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>Gestão de Imóveis & CRM</h1>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={() => setTab('cadastrar')}
-              style={{ background: '#F5A900', color: '#102B50', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 800, cursor: 'pointer', fontSize: 14 }}
-            >
-              + Novo Imóvel
-            </button>
-            <Link href="/" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '10px 18px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
-              Ver Portal
-            </Link>
-          </div>
-        </div>
-
-        {/* Estatísticas Rápidas */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 28 }}>
-          {[
-            { label: 'Total de Imóveis', valor: imoveis.length, emoji: '🏠' },
-            { label: 'Cliques no WhatsApp', valor: totalCliques.toLocaleString('pt-BR'), emoji: '📱' },
-            { label: 'Visualizações Totais', valor: totalVisualizacoes.toLocaleString('pt-BR'), emoji: '👁️' },
-            { label: 'Leads no CRM', valor: leads.length.toLocaleString('pt-BR'), emoji: '📩' },
-          ].map((item, idx) => (
-            <div key={idx} style={{ background: 'white', borderRadius: 12, padding: 20, border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 10, background: '#F5F7FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
-                {item.emoji}
-              </div>
-              <div>
-                <div style={{ color: '#6B7280', fontSize: 13 }}>{item.label}</div>
-                <div style={{ color: '#102B50', fontSize: 22, fontWeight: 800 }}>{item.valor}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Abas */}
-        <div className="tabs-scroll" style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
-          {[
-            { id: 'imoveis', label: 'Meus Imóveis' },
-            { id: 'cadastrar', label: '+ Cadastrar Imóvel' },
-            { id: 'leads', label: 'CRM de Leads' },
-            { id: 'xml', label: 'Integração XML' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id as typeof tab)}
-              style={{
-                background: 'none',
-                border: 'none',
-                borderBottom: tab === t.id ? '3px solid #102B50' : '3px solid transparent',
-                padding: '12px 20px',
-                color: tab === t.id ? '#102B50' : '#6B7280',
-                fontWeight: tab === t.id ? 800 : 600,
-                cursor: 'pointer',
-                fontSize: 15,
-                marginBottom: -2,
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {msgSucesso && (
-          <div style={{ background: '#ECFDF5', color: '#065F46', padding: 14, borderRadius: 8, marginBottom: 20, fontWeight: 600 }}>
-            {msgSucesso}
-          </div>
-        )}
-
-        {/* Conteúdo Aba: Meus Imóveis */}
-        {tab === 'imoveis' && (
-          <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
-            <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Carteira de Imóveis</h2>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #F0F0F0', color: '#6B7280' }}>
-                    <th style={{ padding: '12px 8px' }}>Imóvel</th>
-                    <th style={{ padding: '12px 8px' }}>Tipo/Negócio</th>
-                    <th style={{ padding: '12px 8px' }}>Preço</th>
-                    <th style={{ padding: '12px 8px' }}>Destaque</th>
-                    <th style={{ padding: '12px 8px' }}>WhatsApp</th>
-                    <th style={{ padding: '12px 8px' }}>Status</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'right' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {imoveis.map((imv) => (
-                    <tr key={imv.id} style={{ borderBottom: '1px solid #F0F0F0' }}>
-                      <td style={{ padding: '14px 8px', fontWeight: 600, color: '#1F2937' }}>
-                        {imv.titulo}
-                        <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 400 }}>{imv.endereco.cidade} - {imv.endereco.estado_sigla}</div>
-                      </td>
-                      <td style={{ padding: '14px 8px', textTransform: 'capitalize' }}>
-                        {imv.tipo} ({imv.negocio})
-                      </td>
-                      <td style={{ padding: '14px 8px', fontWeight: 700, color: '#102B50' }}>
-                        {formatarPreco(imv.preco, imv.negocio)}
-                      </td>
-                      <td style={{ padding: '14px 8px' }}>
-                        {imv.destaque ? (
-                          <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 700 }}>⭐ Ativo</span>
-                        ) : (
-                          <span style={{ color: '#9CA3AF', fontSize: 12 }}>Padrão</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '14px 8px', color: '#059669', fontWeight: 700 }}>
-                        {imv.total_cliques_whatsapp || 0} cliques
-                      </td>
-                      <td style={{ padding: '14px 8px' }}>
-                        <span style={{ background: '#ECFDF5', color: '#065F46', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>Ativo</span>
-                      </td>
-                      <td style={{ padding: '14px 8px', textAlign: 'right' }}>
-                        <Link href={`/imovel/${imv.slug}`} style={{ color: '#102B50', fontWeight: 700, textDecoration: 'none', fontSize: 13 }}>
-                          Ver →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Conteúdo Aba: Cadastrar Imóvel */}
-        {tab === 'cadastrar' && (
-          <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
-            <h2 style={{ fontSize: 20, color: '#102B50', fontWeight: 800, marginBottom: 20 }}>Cadastro Gratuito de Imóvel</h2>
-            <form onSubmit={handleCadastrarImovel} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Título do Anúncio</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Apartamento 3 quartos com varanda gourmet em Moema"
-                  className="input-arclar"
-                  required
-                  value={novoTitulo}
-                  onChange={(e) => setNovoTitulo(e.target.value)}
-                />
-              </div>
-
-              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Finalidade</label>
-                  <select value={novoNegocio} onChange={(e) => setNovoNegocio(e.target.value as 'venda' | 'aluguel')} className="input-arclar">
-                    <option value="venda">Venda</option>
-                    <option value="aluguel">Aluguel</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Tipo de Imóvel</label>
-                  <select value={novoTipo} onChange={(e) => setNovoTipo(e.target.value)} className="input-arclar">
-                    <option value="apartamento">Apartamento</option>
-                    <option value="casa">Casa</option>
-                    <option value="cobertura">Cobertura</option>
-                    <option value="terreno">Terreno</option>
-                    <option value="comercial">Comercial</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Preço (R$)</label>
-                  <input
-                    type="number"
-                    placeholder="Ex: 450000"
-                    className="input-arclar"
-                    required
-                    value={novoPreco}
-                    onChange={(e) => setNovoPreco(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Quartos</label>
-                  <input
-                    type="number"
-                    placeholder="2"
-                    className="input-arclar"
-                    value={novoQuartos}
-                    onChange={(e) => setNovoQuartos(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Bairro</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Gonzaga"
-                    className="input-arclar"
-                    value={novoBairro}
-                    onChange={(e) => setNovoBairro(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Cidade</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Santos"
-                    className="input-arclar"
-                    value={novaCidade}
-                    onChange={(e) => setNovaCidade(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>UF</label>
-                  <input
-                    type="text"
-                    placeholder="SP"
-                    maxLength={2}
-                    className="input-arclar"
-                    value={novoEstado}
-                    onChange={(e) => setNovoEstado(e.target.value.toUpperCase())}
-                  />
-                </div>
-              </div>
-
-              <UploadFotos value={fotos} onChange={setFotos} />
-
-              <button
-                type="submit"
-                disabled={cadastrando}
+  // Verificação de Nível Hierárquico: Cliente não acessa o painel de corretores
+  if (!carregandoSessao && (!usuarioSessao || !podeAcessarPainelCorretor(usuarioSessao.nivel))) {
+    return (
+      <div>
+        <BarraNivelHierarquico onNivelAlterado={() => window.location.reload()} />
+        <div style={{ minHeight: '85vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '40px 32px', maxWidth: 520, width: '100%', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: 54, marginBottom: 12 }}>👔</div>
+            <span style={{ background: '#EFF6FF', color: '#1E40AF', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Área Profissional Restrita
+            </span>
+            <h1 style={{ color: '#0F172A', fontSize: 24, fontWeight: 900, marginTop: 14, marginBottom: 8 }}>
+              Painel Exclusivo para Corretores e Imobiliárias
+            </h1>
+            <p style={{ color: '#64748B', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+              Você está logado com perfil de <strong>Cliente / Interessado</strong>. Este painel destina-se exclusivamente a corretores com CRECI e imobiliárias credenciadas para publicação de carteira de imóveis e gestão de CRM.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Link
+                href="/seja-corretor"
                 style={{
                   background: '#F5A900',
                   color: '#102B50',
-                  border: 'none',
-                  padding: 14,
-                  borderRadius: 10,
+                  padding: '14px 20px',
+                  borderRadius: 8,
                   fontWeight: 800,
                   fontSize: 15,
-                  cursor: cadastrando ? 'not-allowed' : 'pointer',
-                  marginTop: 10,
+                  textDecoration: 'none',
+                  display: 'block',
                 }}
               >
-                {cadastrando ? 'Publicando...' : 'Publicar Imóvel Gratuitamente'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Conteúdo Aba: CRM de Leads */}
-        {tab === 'leads' && (
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
-            <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Contatos e Leads Recebidos</h2>
-            {leads.length === 0 ? (
-              <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.6 }}>
-                Nenhum lead recebido ainda. Os contatos enviados pelo formulário dos imóveis aparecerão aqui.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {leads.map((lead) => (
-                  <div key={lead.id} style={{ padding: 16, border: '1px solid #E5E7EB', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: '#1F2937', fontSize: 15 }}>{lead.nome}</div>
-                      <div style={{ color: '#6B7280', fontSize: 13 }}>{lead.telefone} • {lead.email}</div>
-                      <div style={{ color: '#102B50', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
-                        Imóvel: {lead.imovel_id.slice(0, 8)}
-                      </div>
-                      {lead.mensagem && (
-                        <div style={{ color: '#6B7280', fontSize: 12, marginTop: 4 }}>{lead.mensagem}</div>
-                      )}
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
-                        {ROTULOS_LEAD[lead.status] || lead.status}
-                      </span>
-                      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
-                        {lead.criado_em ? new Date(lead.criado_em).toLocaleString('pt-BR') : ''}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Conteúdo Aba: Importação XML */}
-        {tab === 'xml' && (
-          <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
-            <h2 style={{ fontSize: 20, color: '#102B50', fontWeight: 800, marginBottom: 12 }}>Sincronização de Feed XML</h2>
-            <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
-              Conecte o feed XML da sua imobiliária ou sistema CRM (compatível com os padrões VivaReal, Zap e ARC LAR).
-            </p>
-            <form onSubmit={handleSincronizarXml} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>URL do Feed XML</label>
-                <input
-                  type="url"
-                  placeholder="https://seu-sistema.com.br/integracao/feed.xml"
-                  className="input-arclar"
-                  required
-                  value={urlFeed}
-                  onChange={(e) => setUrlFeed(e.target.value)}
-                />
-              </div>
-
-              {xmlLog && (
-                <div style={{ padding: 14, borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: 13 }}>
-                  {xmlLog}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={sincronizandoXml}
+                Credenciar-me como Corretor / Imobiliária →
+              </Link>
+              <Link
+                href="/imoveis"
                 style={{
                   background: '#102B50',
                   color: 'white',
-                  border: 'none',
-                  padding: 14,
-                  borderRadius: 10,
-                  fontWeight: 800,
-                  fontSize: 15,
-                  cursor: sincronizandoXml ? 'not-allowed' : 'pointer',
+                  padding: '12px 20px',
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  textDecoration: 'none',
+                  display: 'block',
                 }}
               >
-                {sincronizandoXml ? 'Sincronizando feed...' : 'Sincronizar Carteira Agora'}
-              </button>
-            </form>
+                Buscar Imóveis no Portal
+              </Link>
+            </div>
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #F1F5F9', fontSize: 12, color: '#94A3B8' }}>
+              💡 <em>Dica de desenvolvimento: Use a barra superior para alternar para <strong>👔 Corretor</strong> ou <strong>👑 Master</strong> para acessar.</em>
+            </div>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <div>
+      <BarraNivelHierarquico onNivelAlterado={() => window.location.reload()} />
+      <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
+          {/* Topo do Painel */}
+          <div className="painel-topo" style={{ background: '#102B50', borderRadius: 16, padding: '28px 32px', color: 'white', marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <span style={{ color: '#F5A900', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Painel Profissional</span>
+              <h1 style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>Gestão de Imóveis & CRM</h1>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setTab('cadastrar')}
+                style={{ background: '#F5A900', color: '#102B50', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 800, cursor: 'pointer', fontSize: 14 }}
+              >
+                + Novo Imóvel
+              </button>
+              <Link href="/" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '10px 18px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
+                Ver Portal
+              </Link>
+            </div>
+          </div>
+
+          {/* Estatísticas Rápidas */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 28 }}>
+            {[
+              { label: 'Total de Imóveis', valor: imoveis.length, emoji: '🏠' },
+              { label: 'Cliques no WhatsApp', valor: totalCliques.toLocaleString('pt-BR'), emoji: '📱' },
+              { label: 'Visualizações Totais', valor: totalVisualizacoes.toLocaleString('pt-BR'), emoji: '👁️' },
+              { label: 'Leads no CRM', valor: leads.length.toLocaleString('pt-BR'), emoji: '📩' },
+            ].map((item, idx) => (
+              <div key={idx} style={{ background: 'white', borderRadius: 12, padding: 20, border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 10, background: '#F5F7FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+                  {item.emoji}
+                </div>
+                <div>
+                  <div style={{ color: '#6B7280', fontSize: 13 }}>{item.label}</div>
+                  <div style={{ color: '#102B50', fontSize: 22, fontWeight: 800 }}>{item.valor}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Abas */}
+          <div className="tabs-scroll" style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
+            {[
+              { id: 'imoveis', label: 'Meus Imóveis' },
+              { id: 'cadastrar', label: '+ Cadastrar Imóvel' },
+              { id: 'leads', label: 'CRM de Leads' },
+              { id: 'xml', label: 'Integração XML' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id as typeof tab)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: tab === t.id ? '3px solid #102B50' : '3px solid transparent',
+                  padding: '12px 20px',
+                  color: tab === t.id ? '#102B50' : '#6B7280',
+                  fontWeight: tab === t.id ? 800 : 600,
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  marginBottom: -2,
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {msgSucesso && (
+            <div style={{ background: '#ECFDF5', color: '#065F46', padding: 14, borderRadius: 8, marginBottom: 20, fontWeight: 600 }}>
+              {msgSucesso}
+            </div>
+          )}
+
+          {/* Conteúdo Aba: Meus Imóveis */}
+          {tab === 'imoveis' && (
+            <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
+              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Carteira de Imóveis</h2>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #F0F0F0', color: '#6B7280' }}>
+                      <th style={{ padding: '12px 8px' }}>Imóvel</th>
+                      <th style={{ padding: '12px 8px' }}>Tipo/Negócio</th>
+                      <th style={{ padding: '12px 8px' }}>Preço</th>
+                      <th style={{ padding: '12px 8px' }}>Destaque</th>
+                      <th style={{ padding: '12px 8px' }}>WhatsApp</th>
+                      <th style={{ padding: '12px 8px' }}>Status</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'right' }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {imoveis.map((imv) => (
+                      <tr key={imv.id} style={{ borderBottom: '1px solid #F0F0F0' }}>
+                        <td style={{ padding: '14px 8px', fontWeight: 600, color: '#1F2937' }}>
+                          {imv.titulo}
+                          <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 400 }}>{imv.endereco.cidade} - {imv.endereco.estado_sigla}</div>
+                        </td>
+                        <td style={{ padding: '14px 8px', textTransform: 'capitalize' }}>
+                          {imv.tipo} ({imv.negocio})
+                        </td>
+                        <td style={{ padding: '14px 8px', fontWeight: 700, color: '#102B50' }}>
+                          {formatarPreco(imv.preco, imv.negocio)}
+                        </td>
+                        <td style={{ padding: '14px 8px' }}>
+                          {imv.destaque ? (
+                            <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 700 }}>⭐ Ativo</span>
+                          ) : (
+                            <span style={{ color: '#9CA3AF', fontSize: 12 }}>Padrão</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '14px 8px', color: '#059669', fontWeight: 700 }}>
+                          {imv.total_cliques_whatsapp || 0} cliques
+                        </td>
+                        <td style={{ padding: '14px 8px' }}>
+                          <span style={{ background: '#ECFDF5', color: '#065F46', padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>Ativo</span>
+                        </td>
+                        <td style={{ padding: '14px 8px', textAlign: 'right' }}>
+                          <Link href={`/imovel/${imv.slug}`} style={{ color: '#102B50', fontWeight: 700, textDecoration: 'none', fontSize: 13 }}>
+                            Ver →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Conteúdo Aba: Cadastrar Imóvel */}
+          {tab === 'cadastrar' && (
+            <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
+              <h2 style={{ fontSize: 20, color: '#102B50', fontWeight: 800, marginBottom: 20 }}>Cadastro Gratuito de Imóvel</h2>
+              <form onSubmit={handleCadastrarImovel} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Título do Anúncio</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Apartamento 3 quartos com varanda gourmet em Moema"
+                    className="input-arclar"
+                    required
+                    value={novoTitulo}
+                    onChange={(e) => setNovoTitulo(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Finalidade</label>
+                    <select value={novoNegocio} onChange={(e) => setNovoNegocio(e.target.value as 'venda' | 'aluguel')} className="input-arclar">
+                      <option value="venda">Venda</option>
+                      <option value="aluguel">Aluguel</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Tipo de Imóvel</label>
+                    <select value={novoTipo} onChange={(e) => setNovoTipo(e.target.value)} className="input-arclar">
+                      <option value="apartamento">Apartamento</option>
+                      <option value="casa">Casa</option>
+                      <option value="cobertura">Cobertura</option>
+                      <option value="terreno">Terreno</option>
+                      <option value="comercial">Comercial</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Preço (R$)</label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 450000"
+                      className="input-arclar"
+                      required
+                      value={novoPreco}
+                      onChange={(e) => setNovoPreco(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Quartos</label>
+                    <input
+                      type="number"
+                      placeholder="2"
+                      className="input-arclar"
+                      value={novoQuartos}
+                      onChange={(e) => setNovoQuartos(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Bairro</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Gonzaga"
+                      className="input-arclar"
+                      value={novoBairro}
+                      onChange={(e) => setNovoBairro(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Cidade</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Santos"
+                      className="input-arclar"
+                      value={novaCidade}
+                      onChange={(e) => setNovaCidade(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>UF</label>
+                    <input
+                      type="text"
+                      placeholder="SP"
+                      maxLength={2}
+                      className="input-arclar"
+                      value={novoEstado}
+                      onChange={(e) => setNovoEstado(e.target.value.toUpperCase())}
+                    />
+                  </div>
+                </div>
+
+                <UploadFotos value={fotos} onChange={setFotos} />
+
+                <button
+                  type="submit"
+                  disabled={cadastrando}
+                  style={{
+                    background: '#F5A900',
+                    color: '#102B50',
+                    border: 'none',
+                    padding: 14,
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    fontSize: 15,
+                    cursor: cadastrando ? 'not-allowed' : 'pointer',
+                    marginTop: 10,
+                  }}
+                >
+                  {cadastrando ? 'Publicando...' : 'Publicar Imóvel Gratuitamente'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Conteúdo Aba: CRM de Leads */}
+          {tab === 'leads' && (
+            <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #E5E7EB' }}>
+              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Contatos e Leads Recebidos</h2>
+              {leads.length === 0 ? (
+                <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.6 }}>
+                  Nenhum lead recebido ainda. Os contatos enviados pelo formulário dos imóveis aparecerão aqui.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {leads.map((lead) => (
+                    <div key={lead.id} style={{ padding: 16, border: '1px solid #E5E7EB', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#1F2937', fontSize: 15 }}>{lead.nome}</div>
+                        <div style={{ color: '#6B7280', fontSize: 13 }}>{lead.telefone} • {lead.email}</div>
+                        <div style={{ color: '#102B50', fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+                          Imóvel: {lead.imovel_id.slice(0, 8)}
+                        </div>
+                        {lead.mensagem && (
+                          <div style={{ color: '#6B7280', fontSize: 12, marginTop: 4 }}>{lead.mensagem}</div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ background: '#FFFBEB', color: '#B45309', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+                          {ROTULOS_LEAD[lead.status] || lead.status}
+                        </span>
+                        <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
+                          {lead.criado_em ? new Date(lead.criado_em).toLocaleString('pt-BR') : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Conteúdo Aba: Importação XML */}
+          {tab === 'xml' && (
+            <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 32, border: '1px solid #E5E7EB', maxWidth: 700 }}>
+              <h2 style={{ fontSize: 20, color: '#102B50', fontWeight: 800, marginBottom: 12 }}>Sincronização de Feed XML</h2>
+              <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
+                Conecte o feed XML da sua imobiliária ou sistema CRM (compatível com os padrões VivaReal, Zap e ARC LAR).
+              </p>
+              <form onSubmit={handleSincronizarXml} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>URL do Feed XML</label>
+                  <input
+                    type="url"
+                    placeholder="https://seu-sistema.com.br/integracao/feed.xml"
+                    className="input-arclar"
+                    required
+                    value={urlFeed}
+                    onChange={(e) => setUrlFeed(e.target.value)}
+                  />
+                </div>
+
+                {xmlLog && (
+                  <div style={{ padding: 14, borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: 13 }}>
+                    {xmlLog}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={sincronizandoXml}
+                  style={{
+                    background: '#102B50',
+                    color: 'white',
+                    border: 'none',
+                    padding: 14,
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    fontSize: 15,
+                    cursor: sincronizandoXml ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {sincronizandoXml ? 'Sincronizando feed...' : 'Sincronizar Carteira Agora'}
+                </button>
+              </form>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );

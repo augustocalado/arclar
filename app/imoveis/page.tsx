@@ -84,6 +84,26 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
       </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
+        {params.aviso && (
+          <div
+            style={{
+              background: '#FFF9E6',
+              color: '#B45309',
+              border: '1px solid #FDE68A',
+              borderRadius: 10,
+              padding: '12px 16px',
+              fontSize: 14,
+              fontWeight: 600,
+              marginBottom: 20,
+            }}
+          >
+            ⚠️ {params.aviso === 'acesso_negado_painel'
+              ? 'O painel profissional é exclusivo para corretores e imobiliárias aprovados.'
+              : params.aviso === 'acesso_negado_admin'
+              ? 'Seu perfil não tem permissão para acessar o Painel Master.'
+              : 'Seu perfil não tem permissão para acessar esta área.'}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {/* Filtros laterais */}
           <aside className="filtros-lateral" style={{ width: 260, flexShrink: 0 }}>
