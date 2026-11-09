@@ -12,6 +12,7 @@ interface PaginaUtilProps {
   icone?: string;
   breadcrumb?: ItemBreadcrumb[];
   atualizadoEm?: string;
+  mostrarLinksUteis?: boolean;
   children: ReactNode;
 }
 
@@ -21,6 +22,7 @@ export default function PaginaUtil({
   icone,
   breadcrumb,
   atualizadoEm,
+  mostrarLinksUteis = true,
   children,
 }: PaginaUtilProps) {
   return (
@@ -74,10 +76,14 @@ export default function PaginaUtil({
             <Link href="/" style={{ color: '#cbd5e1', textDecoration: 'none' }}>
               Início
             </Link>
-            <span>›</span>
-            <Link href="/links-uteis" style={{ color: '#cbd5e1', textDecoration: 'none' }}>
-              Links Úteis
-            </Link>
+            {mostrarLinksUteis && (
+              <>
+                <span>›</span>
+                <Link href="/links-uteis" style={{ color: '#cbd5e1', textDecoration: 'none' }}>
+                  Links Úteis
+                </Link>
+              </>
+            )}
             {breadcrumb && breadcrumb.length > 0 ? (
               breadcrumb.map((item, indice) => (
                 <span key={`${item.label}-${indice}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

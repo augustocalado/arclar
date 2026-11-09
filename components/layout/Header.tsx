@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { CONFIGURACOES_SITE_PADRAO, type ConfiguracoesSite } from '@/lib/configuracoes';
+import RedesSociais from './RedesSociais';
 
 export default function Header() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesSite>(CONFIGURACOES_SITE_PADRAO);
   const estiloSublinkMobile = {
     display: 'block',
     color: '#cbd5e1',
@@ -19,6 +22,25 @@ export default function Header() {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    let ativo = true;
+
+    fetch('/api/configuracoes', { cache: 'no-store' })
+      .then((resposta) => (resposta.ok ? resposta.json() : null))
+      .then((dados) => {
+        if (ativo && dados?.configuracoes) {
+          setConfiguracoes({ ...CONFIGURACOES_SITE_PADRAO, ...dados.configuracoes });
+        }
+      })
+      .catch(() => {
+        // Mantém as configurações padrão caso a API não responda.
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   return (
@@ -38,14 +60,12 @@ export default function Header() {
           <span className="header-topbar-info" style={{ color: '#F5A900', fontSize: 12, fontWeight: 500 }}>
             🏠 Mais de 50.000 imóveis em todo o Brasil
           </span>
-          <div className="header-topbar-links" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <Link href="/links-uteis" style={{ color: '#F5A900', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>
-              🔗 Links Úteis
-            </Link>
+          <div className="header-topbar-links" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <span className="header-topbar-horario" style={{ color: '#94a3b8', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              🕒 {configuracoes.horario_atendimento}
+            </span>
             <span style={{ color: '#444' }}>|</span>
-            <Link href="/anunciar" className="header-topbar-anunciar" style={{ color: '#ccc', fontSize: 12, textDecoration: 'none' }}>
-              Anunciar imóvel
-            </Link>
+            <RedesSociais configuracoes={configuracoes} tamanho={16} cor="#cbd5e1" />
           </div>
         </div>
       </div>
@@ -146,10 +166,19 @@ export default function Header() {
 
               <div className="nav-dropdown-grupo">
                 <Link href="/seja-corretor" className="nav-dropdown-titulo">
+                  Parcerias
+                </Link>
+                <Link href="/seja-corretor" className="nav-dropdown-item">
                   Seja corretor
                 </Link>
-                <Link href="/links-uteis" className="nav-dropdown-item">
-                  Todos os links úteis
+                <Link href="/parceiros" className="nav-dropdown-item">
+                  Seja parceiro
+                </Link>
+                <Link href="/contato" className="nav-dropdown-item">
+                  Fale conosco
+                </Link>
+                <Link href="/links-uteis" className="nav-dropdown-item" style={{ color: '#F5A900', fontWeight: 600 }}>
+                  Todos os links úteis →
                 </Link>
               </div>
             </div>
@@ -324,7 +353,16 @@ export default function Header() {
                 onClick={() => setMenuAberto(false)}
                 style={{ ...estiloSublinkMobile, color: '#F5A900', fontWeight: 700, marginTop: 6 }}
               >
+                Parcerias
+              </Link>
+              <Link href="/seja-corretor" onClick={() => setMenuAberto(false)} style={estiloSublinkMobile}>
                 Seja corretor
+              </Link>
+              <Link href="/parceiros" onClick={() => setMenuAberto(false)} style={estiloSublinkMobile}>
+                Seja parceiro
+              </Link>
+              <Link href="/contato" onClick={() => setMenuAberto(false)} style={estiloSublinkMobile}>
+                Fale conosco
               </Link>
             </div>
           </details>

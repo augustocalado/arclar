@@ -56,6 +56,12 @@ export default function LinksPage() {
       external: true,
     },
     {
+      titulo: '💬 Fale com o ARC LAR',
+      descricao: 'Atendimento humano seg a sex, das 8h às 18h · virtual 24h',
+      href: '/contato',
+      destaque: false,
+    },
+    {
       titulo: '🤝 Links para Parceiros',
       descricao: 'Central exclusiva para imobiliárias e corretores parceiros',
       href: '/parceiros',
@@ -157,6 +163,10 @@ export default function LinksPage() {
           <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center', gap: 16 }}>
             <Link href="/" style={{ color: '#F5A900', fontSize: 12, textDecoration: 'none' }}>
               Página Inicial
+            </Link>
+            <span style={{ color: '#475569' }}>•</span>
+            <Link href="/contato" style={{ color: '#94a3b8', fontSize: 12, textDecoration: 'none' }}>
+              Contato
             </Link>
             <span style={{ color: '#475569' }}>•</span>
             <Link href="/planos" style={{ color: '#94a3b8', fontSize: 12, textDecoration: 'none' }}>

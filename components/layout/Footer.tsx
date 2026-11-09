@@ -145,6 +145,7 @@ export default function Footer() {
             © {ano} ARC LAR — Portal Imobiliário Nacional. Todos os direitos reservados.
           </p>
           <div className="footer-bottom-links" style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            <Link href="/contato" style={{ color: '#F5A900', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>Contato</Link>
             <Link href="/links" style={{ color: '#F5A900', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>Página de Links</Link>
             <Link href="/sitemap.xml" style={{ color: '#475569', fontSize: 13, textDecoration: 'none' }}>Sitemap XML</Link>
             <Link href="/robots.txt" style={{ color: '#475569', fontSize: 13, textDecoration: 'none' }}>Robots.txt</Link>

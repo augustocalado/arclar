@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { CONFIGURACOES_SITE_PADRAO, type ConfiguracoesSite } from '@/lib/configuracoes';
 import type { ParceiroLead } from '@/lib/supabase/parceiros';
 
 const ROTULOS_TIPO_PARCERIA: Record<string, string> = {
@@ -12,9 +13,13 @@ const ROTULOS_TIPO_PARCERIA: Record<string, string> = {
 };
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'parceiros' | 'xml'>('geral');
+  const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'parceiros' | 'redes' | 'xml'>('geral');
   const [parceiros, setParceiros] = useState<ParceiroLead[]>([]);
   const [carregandoParceiros, setCarregandoParceiros] = useState(false);
+  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesSite>(CONFIGURACOES_SITE_PADRAO);
+  const [carregandoConfiguracoes, setCarregandoConfiguracoes] = useState(false);
+  const [salvandoConfiguracoes, setSalvandoConfiguracoes] = useState(false);
+  const [mensagemConfiguracoes, setMensagemConfiguracoes] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
   useEffect(() => {
     if (tab !== 'parceiros') return;
@@ -39,6 +44,70 @@ export default function AdminPage() {
       ativo = false;
     };
   }, [tab]);
+
+  useEffect(() => {
+    if (tab !== 'redes') return;
+
+    let ativo = true;
+
+    fetch('/api/configuracoes', { cache: 'no-store' })
+      .then((resposta) => (resposta.ok ? resposta.json() : Promise.reject(new Error('Falha ao carregar configurações.'))))
+      .then((dados) => {
+        if (ativo && dados?.configuracoes) {
+          setConfiguracoes({ ...CONFIGURACOES_SITE_PADRAO, ...dados.configuracoes });
+        }
+      })
+      .catch(() => {
+        if (ativo) {
+          setMensagemConfiguracoes({ tipo: 'erro', texto: 'Não foi possível carregar as configurações.' });
+        }
+      })
+      .finally(() => {
+        if (ativo) setCarregandoConfiguracoes(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [tab]);
+
+  function atualizarConfiguracao(campo: keyof ConfiguracoesSite, valor: string) {
+    setConfiguracoes((anteriores) => ({ ...anteriores, [campo]: valor }));
+  }
+
+  async function salvarConfiguracoesSite(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setSalvandoConfiguracoes(true);
+    setMensagemConfiguracoes(null);
+
+    try {
+      const resposta = await fetch('/api/configuracoes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configuracoes),
+      });
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados?.error || 'Erro ao salvar as configurações.');
+      }
+
+      setConfiguracoes({ ...CONFIGURACOES_SITE_PADRAO, ...dados.configuracoes });
+      setMensagemConfiguracoes({
+        tipo: 'sucesso',
+        texto: dados.persistido
+          ? 'Configurações salvas e publicadas no site.'
+          : 'Configurações salvas para esta sessão. Configure o Supabase para persistir.',
+      });
+    } catch (erro) {
+      setMensagemConfiguracoes({
+        tipo: 'erro',
+        texto: erro instanceof Error ? erro.message : 'Erro ao salvar as configurações.',
+      });
+    } finally {
+      setSalvandoConfiguracoes(false);
+    }
+  }
 
   return (
     <div className="painel-page" style={{ background: '#F5F7FA', minHeight: '100vh', padding: '32px 24px' }}>
@@ -82,6 +151,7 @@ export default function AdminPage() {
             { id: 'anunciantes', label: 'Anunciantes & Moderação' },
             { id: 'planos', label: 'Planos & Mercado Pago' },
             { id: 'parceiros', label: 'Parceiros' },
+            { id: 'redes', label: 'Redes & Atendimento' },
             { id: 'xml', label: 'Feeds XML & Integrações' },
           ].map((t) => (
             <button
@@ -89,6 +159,10 @@ export default function AdminPage() {
               onClick={() => {
                 if (t.id === 'parceiros' && tab !== 'parceiros') {
                   setCarregandoParceiros(true);
+                }
+                if (t.id === 'redes' && tab !== 'redes') {
+                  setCarregandoConfiguracoes(true);
+                  setMensagemConfiguracoes(null);
                 }
                 setTab(t.id as typeof tab);
               }}
@@ -237,6 +311,178 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'redes' && (
+            <div>
+              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 8 }}>
+                Redes sociais e horários de atendimento
+              </h2>
+              <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.6, marginBottom: 22 }}>
+                Essas informações aparecem na barra superior do site e na página de contato. Os links
+                devem começar com http:// ou https://.
+              </p>
+
+              {carregandoConfiguracoes ? (
+                <p style={{ color: '#6B7280', fontSize: 14 }}>Carregando configurações...</p>
+              ) : (
+                <form onSubmit={salvarConfiguracoesSite} style={{ display: 'grid', gap: 18, maxWidth: 760 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+                    {([
+                      { campo: 'instagram', label: 'Instagram', placeholder: 'https://www.instagram.com/seu-perfil' },
+                      { campo: 'facebook', label: 'Facebook', placeholder: 'https://www.facebook.com/sua-pagina' },
+                      { campo: 'tiktok', label: 'TikTok', placeholder: 'https://www.tiktok.com/@seu-perfil' },
+                      { campo: 'google', label: 'Google', placeholder: 'https://g.page/seu-negocio' },
+                    ] as const).map(({ campo, label, placeholder }) => (
+                      <label key={campo} style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 700, color: '#374151' }}>
+                        {label}
+                        <input
+                          type="url"
+                          value={configuracoes[campo]}
+                          onChange={(evento) => atualizarConfiguracao(campo, evento.target.value)}
+                          placeholder={placeholder}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            border: '1px solid #D1D5DB',
+                            fontSize: 14,
+                            color: '#111827',
+                            background: '#FFFFFF',
+                          }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <label style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 700, color: '#374151' }}>
+                    Horário exibido na barra superior
+                    <input
+                      value={configuracoes.horario_atendimento}
+                      onChange={(evento) => atualizarConfiguracao('horario_atendimento', evento.target.value)}
+                      placeholder="Atendimento: seg a sex, das 8h às 18h"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #D1D5DB',
+                        fontSize: 14,
+                        color: '#111827',
+                        background: '#FFFFFF',
+                      }}
+                    />
+                  </label>
+
+                  <label style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 700, color: '#374151' }}>
+                    Atendimento humano (página de contato)
+                    <input
+                      value={configuracoes.atendimento_humano}
+                      onChange={(evento) => atualizarConfiguracao('atendimento_humano', evento.target.value)}
+                      placeholder="Seg a sex, das 8h às 18h"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #D1D5DB',
+                        fontSize: 14,
+                        color: '#111827',
+                        background: '#FFFFFF',
+                      }}
+                    />
+                  </label>
+
+                  <label style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 700, color: '#374151' }}>
+                    Atendimento virtual (página de contato)
+                    <input
+                      value={configuracoes.atendimento_virtual}
+                      onChange={(evento) => atualizarConfiguracao('atendimento_virtual', evento.target.value)}
+                      placeholder="Atendimento virtual 24h"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #D1D5DB',
+                        fontSize: 14,
+                        color: '#111827',
+                        background: '#FFFFFF',
+                      }}
+                    />
+                  </label>
+
+                  {mensagemConfiguracoes && (
+                    <div
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 8,
+                        background: mensagemConfiguracoes.tipo === 'sucesso' ? '#ECFDF5' : '#FEF2F2',
+                        color: mensagemConfiguracoes.tipo === 'sucesso' ? '#065F46' : '#991B1B',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {mensagemConfiguracoes.texto}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="submit"
+                      disabled={salvandoConfiguracoes}
+                      style={{
+                        background: '#102B50',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        padding: '11px 20px',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontWeight: 800,
+                        cursor: salvandoConfiguracoes ? 'wait' : 'pointer',
+                        opacity: salvandoConfiguracoes ? 0.7 : 1,
+                      }}
+                    >
+                      {salvandoConfiguracoes ? 'Salvando...' : 'Salvar configurações'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfiguracoes(CONFIGURACOES_SITE_PADRAO);
+                        setMensagemConfiguracoes(null);
+                      }}
+                      style={{
+                        background: '#F3F4F6',
+                        color: '#374151',
+                        border: '1px solid #D1D5DB',
+                        padding: '11px 20px',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Restaurar padrões
+                    </button>
+                    <Link
+                      href="/contato"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '11px 20px',
+                        borderRadius: 8,
+                        border: '1px solid #102B50',
+                        color: '#102B50',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Ver página de contato
+                    </Link>
+                  </div>
+                </form>
               )}
             </div>
           )}

@@ -131,6 +131,7 @@ select.input-arclar {
 /* Links hover via CSS */
 .link-nav:hover { color: #F5A900 !important; }
 .link-footer:hover { color: #F5A900 !important; }
+.rede-social:hover { color: #F5A900 !important; transform: translateY(-1px); }
 
 /* Submenu Links Úteis (desktop) */
 .nav-dropdown {
@@ -315,6 +316,8 @@ img, video {
 @media (max-width: 768px) {
   .header-topbar-info { display: none !important; }
   .header-topbar { justify-content: center !important; }
+  .header-topbar-links { gap: 10px !important; }
+  .header-topbar-horario { font-size: 11px !important; }
   .header-nav {
     padding: 0 14px !important;
     height: 62px !important;
