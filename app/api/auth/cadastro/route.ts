@@ -3,6 +3,11 @@ import { cookies } from 'next/headers';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
 import { converterParaNivelHierarquico } from '@/lib/auth/permissoes';
+import {
+  adicionarAnuncianteMemoria,
+  listarAnunciantesMemoria,
+  type AnuncianteItem,
+} from '@/lib/anunciantes-store';
 import type { NivelHierarquico, PerfilUsuario, UsuarioAutenticado } from '@/types';
 
 const COOKIE_NOME = 'arclar_sessao_usuario';
@@ -74,15 +79,45 @@ export async function POST(request: Request) {
       }
     }
 
+    const nomeCompleto = [nome, sobrenome].filter(Boolean).join(' ') || nome;
+    const perfilAnunciante: AnuncianteItem['perfil'] =
+      perfil === 'imobiliaria'
+        ? 'imobiliaria'
+        : perfil === 'corretor'
+          ? 'corretor'
+          : perfil === 'proprietario'
+            ? 'proprietario'
+            : 'cliente';
+
     const usuario: UsuarioAutenticado = {
       id,
-      nome: [nome, sobrenome].filter(Boolean).join(' '),
+      nome: nomeCompleto,
       email,
       nivel,
       perfil,
       telefone,
       ativo,
     };
+
+    const jaCadastrado = listarAnunciantesMemoria().some((item) => item.email === email);
+    if (!jaCadastrado) {
+      adicionarAnuncianteMemoria({
+        id,
+        nome: nomeCompleto,
+        nome_comercial: nomeCompleto,
+        email,
+        telefone,
+        whatsapp: telefone,
+        creci: '',
+        nivel,
+        perfil: perfilAnunciante,
+        plano: 'Gratuito',
+        plano_status: 'ativo',
+        status,
+        total_imoveis: 0,
+        criado_em: new Date().toISOString(),
+      });
+    }
 
     if (ativo) {
       const cookieStore = await cookies();

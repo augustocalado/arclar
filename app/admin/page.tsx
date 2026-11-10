@@ -6,7 +6,7 @@ import { CONFIGURACOES_SITE_PADRAO, type ConfiguracoesSite } from '@/lib/configu
 import type { ParceiroLead } from '@/lib/supabase/parceiros';
 import type { Plano } from '@/lib/planos';
 import type { AnuncianteItem } from '@/app/api/anunciantes/route';
-import type { NivelHierarquico, UsuarioAutenticado } from '@/types';
+import type { Lead, NivelHierarquico, UsuarioAutenticado } from '@/types';
 import { DESCRICAO_NIVEIS, podeAcessarAdmin } from '@/lib/auth/permissoes';
 import BarraNivelHierarquico from '@/components/auth/BarraNivelHierarquico';
 
@@ -42,6 +42,11 @@ export default function AdminPage() {
   const [anuncianteEditando, setAnuncianteEditando] = useState<AnuncianteItem | null>(null);
   const [salvandoAnunciante, setSalvandoAnunciante] = useState(false);
   const [mensagemAnunciante, setMensagemAnunciante] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+
+  // Estados da Visão Geral (dashboard)
+  const [totalImoveis, setTotalImoveis] = useState(0);
+  const [leadsCrm, setLeadsCrm] = useState<Lead[]>([]);
+  const [carregandoGeral, setCarregandoGeral] = useState(true);
 
   // Estados da aba de Planos
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -128,6 +133,32 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab !== 'planos') return;
     carregarPlanos();
+  }, [tab]);
+
+  // Carregar dashboard da visão geral
+  useEffect(() => {
+    if (tab !== 'geral') return;
+    let ativo = true;
+    carregarListaAnunciantes();
+
+    Promise.all([
+      fetch('/api/imoveis', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : { total: 0 })),
+      fetch('/api/leads', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : { leads: [] })),
+    ])
+      .then(([imoveisDados, leadsDados]) => {
+        if (!ativo) return;
+        setTotalImoveis(
+          Number(imoveisDados.total) ||
+            (Array.isArray(imoveisDados.imoveis) ? imoveisDados.imoveis.length : 0)
+        );
+        setLeadsCrm(Array.isArray(leadsDados.leads) ? leadsDados.leads : []);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (ativo) setCarregandoGeral(false);
+      });
+
+    return () => { ativo = false; };
   }, [tab]);
 
   function carregarPlanos() {
@@ -379,6 +410,12 @@ export default function AdminPage() {
     );
   });
 
+  const usuariosProfissionais = anunciantes.filter((a) => a.nivel === 'corretor');
+  const usuariosClientes = anunciantes.filter((a) => a.nivel === 'cliente');
+  const totalUsuarios = usuariosProfissionais.length + usuariosClientes.length;
+  const planosPendentes = anunciantes.filter((a) => a.plano_status === 'pendente').length;
+  const leadsNovos = leadsCrm.filter((lead) => lead.status === 'novo').length;
+
   // Verificação de Nível Hierárquico: se não for Admin Master, bloqueia o acesso
   if (!carregandoSessao && (!usuarioSessao || !podeAcessarAdmin(usuarioSessao.nivel))) {
     const isCorretor = usuarioSessao?.nivel === 'corretor';
@@ -470,21 +507,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Métricas Master */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-          {[
-            { label: 'Anunciantes Cadastrados', valor: anunciantes.length > 0 ? String(anunciantes.length) : '1.240', cor: '#102B50' },
-            { label: 'Imóveis Publicados', valor: '52.340', cor: '#059669' },
-            { label: 'Cliques no WhatsApp', valor: '18.920', cor: '#25D366' },
-            { label: 'Receita Mensal (MP)', valor: 'R$ 48.750', cor: '#F5A900' },
-          ].map((m, idx) => (
-            <div key={idx} style={{ background: 'white', borderRadius: 12, padding: 20, border: '1px solid #E5E7EB' }}>
-              <div style={{ color: '#6B7280', fontSize: 13 }}>{m.label}</div>
-              <div style={{ color: m.cor, fontSize: 24, fontWeight: 900, marginTop: 4 }}>{m.valor}</div>
-            </div>
-          ))}
-        </div>
-
         {/* Abas de Navegação */}
         <div className="tabs-scroll" style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
           {[
@@ -526,10 +548,104 @@ export default function AdminPage() {
         <div className="painel-conteudo" style={{ background: 'white', borderRadius: 16, padding: 28, border: '1px solid #E5E7EB' }}>
           {tab === 'geral' && (
             <div>
-              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 16 }}>Status da Plataforma</h2>
-              <p style={{ color: '#4B5563', fontSize: 14, lineHeight: 1.6 }}>
-                Ambiente de produção conectado com monitoramento em tempo real de indexação SEO, sitemap ativo, tracking de contatos via WhatsApp e banco de dados relacional.
+              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, marginBottom: 4 }}>Visão Geral</h2>
+              <p style={{ color: '#6B7280', fontSize: 13, margin: '0 0 20px' }}>
+                Administração de usuários, carteira de imóveis e CRM da plataforma.
               </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16, marginBottom: 28 }}>
+                {[
+                  { label: 'Usuários cadastrados', valor: totalUsuarios, cor: '#102B50' },
+                  { label: 'Imobiliárias e corretores', valor: usuariosProfissionais.length, cor: '#7C3AED' },
+                  { label: 'Clientes', valor: usuariosClientes.length, cor: '#0EA5E9' },
+                  { label: 'Imóveis cadastrados', valor: totalImoveis, cor: '#059669' },
+                  { label: 'Leads no CRM', valor: leadsCrm.length, cor: '#F5A900' },
+                  { label: 'Planos a confirmar', valor: planosPendentes, cor: '#DC2626' },
+                ].map((metrica) => (
+                  <div key={metrica.label} style={{ background: '#F8FAFC', borderRadius: 12, padding: 18, border: '1px solid #E5E7EB' }}>
+                    <div style={{ color: '#6B7280', fontSize: 12, fontWeight: 600 }}>{metrica.label}</div>
+                    <div style={{ color: metrica.cor, fontSize: 26, fontWeight: 900, marginTop: 4 }}>
+                      {carregandoGeral ? '—' : metrica.valor}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
+                  <h3 style={{ fontSize: 15, color: '#102B50', fontWeight: 800, margin: '0 0 14px' }}>
+                    Imobiliárias e corretores ({usuariosProfissionais.length})
+                  </h3>
+                  {usuariosProfissionais.length === 0 ? (
+                    <p style={{ color: '#94A3B8', fontSize: 13, margin: 0 }}>Nenhum profissional cadastrado.</p>
+                  ) : (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {usuariosProfissionais.map((usuario) => (
+                        <li
+                          key={usuario.id}
+                          style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#102B50' }}
+                        >
+                          {usuario.nome_comercial || usuario.nome}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
+                  <h3 style={{ fontSize: 15, color: '#102B50', fontWeight: 800, margin: '0 0 14px' }}>
+                    Clientes ({usuariosClientes.length})
+                  </h3>
+                  {usuariosClientes.length === 0 ? (
+                    <p style={{ color: '#94A3B8', fontSize: 13, margin: 0 }}>Nenhum cliente cadastrado.</p>
+                  ) : (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {usuariosClientes.map((usuario) => (
+                        <li
+                          key={usuario.id}
+                          style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#102B50' }}
+                        >
+                          {usuario.nome}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
+                  <h3 style={{ fontSize: 15, color: '#102B50', fontWeight: 800, margin: '0 0 14px' }}>CRM</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14, color: '#374151' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Total de leads</span>
+                      <strong style={{ color: '#102B50' }}>{leadsCrm.length}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Leads novos</span>
+                      <strong style={{ color: '#059669' }}>{leadsNovos}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Planos a confirmar</span>
+                      <strong style={{ color: planosPendentes > 0 ? '#DC2626' : '#059669' }}>{planosPendentes}</strong>
+                    </div>
+                  </div>
+                  <Link
+                    href="/painel"
+                    style={{
+                      display: 'inline-block',
+                      marginTop: 16,
+                      background: '#102B50',
+                      color: 'white',
+                      padding: '10px 18px',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Abrir CRM →
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 

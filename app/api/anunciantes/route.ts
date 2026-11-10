@@ -3,24 +3,15 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
 import type { NivelHierarquico } from '@/types';
 import { converterParaNivelHierarquico } from '@/lib/auth/permissoes';
+import {
+  adicionarAnuncianteMemoria,
+  atualizarAnuncianteMemoria,
+  excluirAnuncianteMemoria,
+  listarAnunciantesMemoria,
+  type AnuncianteItem,
+} from '@/lib/anunciantes-store';
 
-export interface AnuncianteItem {
-  id: string;
-  nome: string;
-  nome_comercial: string;
-  email: string;
-  telefone?: string;
-  whatsapp?: string;
-  creci?: string;
-  nivel: NivelHierarquico;
-  perfil: 'imobiliaria' | 'corretor' | 'proprietario' | 'admin_master' | 'cliente';
-  plano: string;
-  plano_status: 'ativo' | 'pendente' | 'cancelado';
-  plano_desde?: string;
-  status: 'Ativo' | 'Pendente' | 'Bloqueado';
-  total_imoveis: number;
-  criado_em: string;
-}
+export type { AnuncianteItem } from '@/lib/anunciantes-store';
 
 type PerfilAnunciante = AnuncianteItem['perfil'];
 type StatusAnunciante = AnuncianteItem['status'];
@@ -32,90 +23,6 @@ const NOMES_PLANOS: Record<string, string> = {
   profissional: 'Profissional',
   imobiliaria: 'Imobiliária',
 };
-
-// Lista padrão em memória para desenvolvimento/fallback com os 3 níveis hierárquicos
-let anunciantesMemoria: AnuncianteItem[] = [
-  {
-    id: 'anunc-master',
-    nome: 'Administrador Master',
-    nome_comercial: 'ARC LAR Matriz Admin',
-    email: 'admin@arclar.com.br',
-    telefone: '(11) 3456-7890',
-    whatsapp: '11999998888',
-    creci: 'MASTER-01',
-    nivel: 'admin_master',
-    perfil: 'admin_master',
-    plano: 'Corporativo',
-    plano_status: 'ativo',
-    status: 'Ativo',
-    total_imoveis: 0,
-    criado_em: '2026-01-01T08:00:00Z',
-  },
-  {
-    id: 'anunc-1',
-    nome: 'Prime Imóveis LTDA',
-    nome_comercial: 'Prime Imóveis',
-    email: 'contato@primeimoveis.com.br',
-    telefone: '(11) 3456-7890',
-    whatsapp: '11999998888',
-    creci: '12345-J',
-    nivel: 'corretor',
-    perfil: 'imobiliaria',
-    plano: 'Imobiliária',
-    plano_status: 'ativo',
-    status: 'Ativo',
-    total_imoveis: 45,
-    criado_em: '2026-01-15T10:00:00Z',
-  },
-  {
-    id: 'anunc-2',
-    nome: 'Carlos Eduardo Corretor',
-    nome_comercial: 'Carlos Corretor',
-    email: 'carlos@corretor.com.br',
-    telefone: '(11) 98888-7777',
-    whatsapp: '11988887777',
-    creci: '98765-F',
-    nivel: 'corretor',
-    perfil: 'corretor',
-    plano: 'Profissional',
-    plano_status: 'ativo',
-    status: 'Ativo',
-    total_imoveis: 18,
-    criado_em: '2026-02-10T14:30:00Z',
-  },
-  {
-    id: 'anunc-3',
-    nome: 'Litoral Imóveis Praia Grande',
-    nome_comercial: 'Litoral Imóveis',
-    email: 'atendimento@litoralimoveis.com.br',
-    telefone: '(13) 3499-1122',
-    whatsapp: '13988887777',
-    creci: '54321-J',
-    nivel: 'corretor',
-    perfil: 'imobiliaria',
-    plano: 'Profissional',
-    plano_status: 'pendente',
-    status: 'Ativo',
-    total_imoveis: 32,
-    criado_em: '2026-02-28T09:15:00Z',
-  },
-  {
-    id: 'anunc-4',
-    nome: 'Roberto Silveira',
-    nome_comercial: 'Roberto Silveira (Proprietário)',
-    email: 'roberto.silveira@email.com',
-    telefone: '(11) 97777-6666',
-    whatsapp: '11977776666',
-    creci: '',
-    nivel: 'cliente',
-    perfil: 'proprietario',
-    plano: 'Gratuito',
-    plano_status: 'ativo',
-    status: 'Ativo',
-    total_imoveis: 2,
-    criado_em: '2026-03-01T16:20:00Z',
-  },
-];
 
 export async function GET() {
   if (isSupabaseConfigured()) {
@@ -175,7 +82,7 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ anunciantes: anunciantesMemoria });
+  return NextResponse.json({ anunciantes: listarAnunciantesMemoria() });
 }
 
 export async function POST(request: Request) {
@@ -226,7 +133,7 @@ export async function POST(request: Request) {
       }
     }
 
-    anunciantesMemoria.unshift(novoAnunciante);
+    adicionarAnuncianteMemoria(novoAnunciante);
 
     return NextResponse.json({ success: true, anunciante: novoAnunciante }, { status: 201 });
   } catch (err) {
@@ -244,28 +151,26 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID do anunciante é obrigatório.' }, { status: 400 });
     }
 
-    const indice = anunciantesMemoria.findIndex((a) => a.id === id);
-    if (indice !== -1) {
-      const nivelAtualizado = nivel || (perfil ? converterParaNivelHierarquico(perfil) : anunciantesMemoria[indice].nivel);
-      anunciantesMemoria[indice] = {
-        ...anunciantesMemoria[indice],
-        nome: nome ? String(nome).trim() : anunciantesMemoria[indice].nome,
-        nome_comercial: nome_comercial ? String(nome_comercial).trim() : anunciantesMemoria[indice].nome_comercial,
-        email: email ? String(email).trim().toLowerCase() : anunciantesMemoria[indice].email,
-        telefone: telefone !== undefined ? String(telefone).trim() : anunciantesMemoria[indice].telefone,
-        whatsapp: whatsapp !== undefined ? String(whatsapp).trim() : anunciantesMemoria[indice].whatsapp,
-        creci: creci !== undefined ? String(creci).trim() : anunciantesMemoria[indice].creci,
-        nivel: nivelAtualizado,
-        perfil: perfil || anunciantesMemoria[indice].perfil,
-        plano: plano || anunciantesMemoria[indice].plano,
-        plano_status: (plano_status as PlanoStatusAnunciante) || anunciantesMemoria[indice].plano_status,
-        plano_desde:
-          plano_status === 'ativo' && !anunciantesMemoria[indice].plano_desde
-            ? new Date().toISOString()
-            : anunciantesMemoria[indice].plano_desde,
-        status: status || anunciantesMemoria[indice].status,
-      };
-    }
+    const atual = listarAnunciantesMemoria().find((a) => a.id === id);
+    const atualizado = atual
+      ? atualizarAnuncianteMemoria(id, {
+          nome: nome ? String(nome).trim() : atual.nome,
+          nome_comercial: nome_comercial ? String(nome_comercial).trim() : atual.nome_comercial,
+          email: email ? String(email).trim().toLowerCase() : atual.email,
+          telefone: telefone !== undefined ? String(telefone).trim() : atual.telefone,
+          whatsapp: whatsapp !== undefined ? String(whatsapp).trim() : atual.whatsapp,
+          creci: creci !== undefined ? String(creci).trim() : atual.creci,
+          nivel: nivel || (perfil ? converterParaNivelHierarquico(perfil) : atual.nivel),
+          perfil: perfil || atual.perfil,
+          plano: plano || atual.plano,
+          plano_status: (plano_status as PlanoStatusAnunciante) || atual.plano_status,
+          plano_desde:
+            plano_status === 'ativo' && !atual.plano_desde
+              ? new Date().toISOString()
+              : atual.plano_desde,
+          status: status || atual.status,
+        })
+      : null;
 
     if (isSupabaseConfigured()) {
       try {
@@ -299,7 +204,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({
       success: true,
-      anunciante: indice !== -1 ? anunciantesMemoria[indice] : body,
+      anunciante: atualizado ?? body,
     });
   } catch (err) {
     const mensagem = err instanceof Error ? err.message : 'Erro ao atualizar anunciante.';
@@ -316,7 +221,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID é obrigatório.' }, { status: 400 });
     }
 
-    anunciantesMemoria = anunciantesMemoria.filter((a) => a.id !== id);
+    excluirAnuncianteMemoria(id);
 
     if (isSupabaseConfigured()) {
       try {
