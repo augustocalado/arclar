@@ -305,6 +305,38 @@ export default function AdminPage() {
     }
   }
 
+  async function handleAlternarAcesso(item: AnuncianteItem) {
+    const bloqueando = item.status !== 'Bloqueado';
+    const novoStatus = bloqueando ? 'Bloqueado' : 'Ativo';
+    const pergunta = bloqueando
+      ? `Deseja cancelar o acesso de "${item.nome_comercial}"? O cadastro será mantido, mas o usuário não poderá entrar.`
+      : `Deseja reativar o acesso de "${item.nome_comercial}"?`;
+
+    if (!confirm(pergunta)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/anunciantes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, status: novoStatus }),
+      });
+
+      if (!res.ok) throw new Error('Não foi possível atualizar o acesso.');
+
+      carregarListaAnunciantes();
+      setMensagemAnunciante({
+        tipo: 'sucesso',
+        texto: bloqueando
+          ? `Acesso de "${item.nome_comercial}" cancelado.`
+          : `Acesso de "${item.nome_comercial}" reativado.`,
+      });
+    } catch {
+      setMensagemAnunciante({ tipo: 'erro', texto: 'Erro ao atualizar o acesso do usuário.' });
+    }
+  }
+
   async function handleExcluirAnunciante(id: string, nome: string) {
     if (!confirm(`Tem certeza que deseja excluir o anunciante "${nome}"? Esta ação removerá os acessos.`)) {
       return;
@@ -511,7 +543,7 @@ export default function AdminPage() {
         <div className="tabs-scroll" style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
           {[
             { id: 'geral', label: 'Visão Geral' },
-            { id: 'anunciantes', label: 'Anunciantes & Moderação' },
+            { id: 'anunciantes', label: 'Usuários & Moderação' },
             { id: 'planos', label: 'Planos & Mercado Pago' },
             { id: 'parceiros', label: 'Parceiros' },
             { id: 'redes', label: 'Redes & Atendimento' },
@@ -654,9 +686,9 @@ export default function AdminPage() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, margin: 0 }}>Anunciantes & Moderação</h2>
+                  <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, margin: 0 }}>Usuários & Moderação</h2>
                   <p style={{ color: '#6B7280', fontSize: 13, margin: '4px 0 0' }}>
-                    Cadastre, edite, aprove ou exclua imobiliárias, corretores e proprietários do portal.
+                    Todos os cadastros do portal: edite, cancele/reative o acesso, aprove ou exclua imobiliárias, corretores e clientes.
                   </p>
                 </div>
                 <button
@@ -822,6 +854,24 @@ export default function AdminPage() {
                                 Confirmar plano
                               </button>
                             )}
+                            {item.nivel !== 'admin_master' && (
+                              <button
+                                onClick={() => handleAlternarAcesso(item)}
+                                style={{
+                                  background: item.status === 'Bloqueado' ? '#ECFDF5' : '#FEF2F2',
+                                  color: item.status === 'Bloqueado' ? '#065F46' : '#991B1B',
+                                  border: item.status === 'Bloqueado' ? '1px solid #6EE7B7' : '1px solid #FCA5A5',
+                                  padding: '6px 10px',
+                                  borderRadius: 6,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  marginRight: 6,
+                                }}
+                              >
+                                {item.status === 'Bloqueado' ? 'Reativar acesso' : 'Cancelar acesso'}
+                              </button>
+                            )}
                             <button
                               onClick={() => abrirModalEditar(item)}
                               style={{
@@ -838,21 +888,23 @@ export default function AdminPage() {
                             >
                               Editar
                             </button>
-                            <button
-                              onClick={() => handleExcluirAnunciante(item.id, item.nome_comercial)}
-                              style={{
-                                background: '#EF4444',
-                                color: 'white',
-                                border: 'none',
-                                padding: '6px 10px',
-                                borderRadius: 6,
-                                fontWeight: 600,
-                                fontSize: 12,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Excluir
-                            </button>
+                            {item.nivel !== 'admin_master' && (
+                              <button
+                                onClick={() => handleExcluirAnunciante(item.id, item.nome_comercial)}
+                                style={{
+                                  background: '#EF4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '6px 10px',
+                                  borderRadius: 6,
+                                  fontWeight: 600,
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Excluir
+                              </button>
+                            )}
                           </td>
                         </tr>
                         );

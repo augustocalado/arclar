@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { USUARIOS_EXEMPLO, converterParaNivelHierarquico } from '@/lib/auth/permissoes';
+import { listarAnunciantesMemoria } from '@/lib/anunciantes-store';
 import type { NivelHierarquico, UsuarioAutenticado } from '@/types';
 
 const COOKIE_NOME = 'arclar_sessao_usuario';
@@ -26,6 +27,21 @@ export async function GET() {
 
   if (!usuario) {
     return NextResponse.json({ autenticado: false, usuario: null, nivel: null });
+  }
+
+  const cadastro = listarAnunciantesMemoria().find(
+    (item) => item.email.toLowerCase() === usuario.email.toLowerCase()
+  );
+
+  if (cadastro && cadastro.status === 'Bloqueado') {
+    cookieStore.delete(COOKIE_NOME);
+    return NextResponse.json({
+      autenticado: false,
+      usuario: null,
+      nivel: null,
+      bloqueado: true,
+      mensagem: 'Seu acesso foi cancelado pelo administrador.',
+    });
   }
 
   return NextResponse.json({
