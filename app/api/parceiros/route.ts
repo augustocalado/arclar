@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import {
+  atualizarParceiroLead,
   criarParceiroLead,
+  excluirParceiroLead,
   listarParceirosLeads,
   type NovoParceiroLeadInput,
+  type StatusParceiroLead,
   type TipoParceria,
 } from '@/lib/supabase/parceiros';
 import { notificarNovoParceiro } from '@/lib/email/notificacoes';
@@ -10,6 +13,7 @@ import { notificarNovoParceiro } from '@/lib/email/notificacoes';
 export const dynamic = 'force-dynamic';
 
 const TIPOS_PARCERIA: TipoParceria[] = ['imobiliaria', 'corretor', 'portal', 'outro'];
+const STATUS_PARCERIA: StatusParceiroLead[] = ['novo', 'atendimento', 'fechado', 'perdido'];
 
 function limpar(valor: unknown, limite: number): string {
   return typeof valor === 'string' ? valor.trim().slice(0, limite) : '';
@@ -51,6 +55,63 @@ function montarEmailUrl(input: NovoParceiroLeadInput): string | null {
 export async function GET() {
   const leads = await listarParceirosLeads();
   return NextResponse.json({ total: leads.length, leads });
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+
+    if (!body.id) {
+      return NextResponse.json({ error: 'ID da solicitação é obrigatório.' }, { status: 400 });
+    }
+
+    const tipoInformado = limpar(body.tipo_parceria, 50) as TipoParceria;
+    const statusInformado = limpar(body.status, 50) as StatusParceiroLead;
+
+    const lead = await atualizarParceiroLead(String(body.id), {
+      nome: body.nome !== undefined ? limpar(body.nome, 255) : undefined,
+      email: body.email !== undefined ? limpar(body.email, 255) : undefined,
+      telefone: body.telefone !== undefined ? limpar(body.telefone, 50) : undefined,
+      empresa: body.empresa !== undefined ? limpar(body.empresa, 255) : undefined,
+      cidade: body.cidade !== undefined ? limpar(body.cidade, 255) : undefined,
+      tipo_parceria: TIPOS_PARCERIA.includes(tipoInformado) ? tipoInformado : undefined,
+      mensagem: body.mensagem !== undefined ? limpar(body.mensagem, 2000) : undefined,
+      status: STATUS_PARCERIA.includes(statusInformado) ? statusInformado : undefined,
+    });
+
+    if (!lead) {
+      return NextResponse.json({ error: 'Solicitação de parceria não encontrada.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, lead });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    console.error('[PARCERIAS] Erro ao atualizar contato:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID da solicitação é obrigatório.' }, { status: 400 });
+    }
+
+    const removido = await excluirParceiroLead(id);
+
+    if (!removido) {
+      return NextResponse.json({ error: 'Solicitação de parceria não encontrada.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, id });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    console.error('[PARCERIAS] Erro ao excluir contato:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

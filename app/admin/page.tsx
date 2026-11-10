@@ -21,6 +21,13 @@ const ROTULOS_TIPO_PARCERIA: Record<string, string> = {
   outro: 'Outro',
 };
 
+const ROTULOS_STATUS_PARCERIA: Record<string, string> = {
+  novo: 'Novo',
+  atendimento: 'Em atendimento',
+  fechado: 'Aceito',
+  perdido: 'Perdido',
+};
+
 export default function AdminPage() {
   // Controle de Sessão e Nível Hierárquico (RBAC)
   const [usuarioSessao, setUsuarioSessao] = useState<UsuarioAutenticado | null>(null);
@@ -29,6 +36,9 @@ export default function AdminPage() {
   const [tab, setTab] = useState<'geral' | 'anunciantes' | 'planos' | 'parceiros' | 'redes' | 'xml'>('geral');
   const [parceiros, setParceiros] = useState<ParceiroLead[]>([]);
   const [carregandoParceiros, setCarregandoParceiros] = useState(false);
+  const [parceiroEditando, setParceiroEditando] = useState<ParceiroLead | null>(null);
+  const [salvandoParceiro, setSalvandoParceiro] = useState(false);
+  const [mensagemParceiro, setMensagemParceiro] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
   const [configuracoes, setConfiguracoes] = useState<ConfiguracoesSite>(CONFIGURACOES_SITE_PADRAO);
   const [carregandoConfiguracoes, setCarregandoConfiguracoes] = useState(false);
   const [salvandoConfiguracoes, setSalvandoConfiguracoes] = useState(false);
@@ -350,6 +360,118 @@ export default function AdminPage() {
       carregarListaAnunciantes();
     } catch {
       alert('Erro ao excluir o anunciante.');
+    }
+  }
+
+  function abrirEdicaoParceiro(item: ParceiroLead) {
+    setParceiroEditando({ ...item });
+    setMensagemParceiro(null);
+  }
+
+  function atualizarCampoParceiro<K extends keyof ParceiroLead>(campo: K, valor: ParceiroLead[K]) {
+    setParceiroEditando((atual) => (atual ? { ...atual, [campo]: valor } : atual));
+  }
+
+  async function handleSalvarParceiro(evento: FormEvent) {
+    evento.preventDefault();
+
+    if (!parceiroEditando) return;
+
+    setSalvandoParceiro(true);
+    setMensagemParceiro(null);
+
+    try {
+      const res = await fetch('/api/parceiros', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: parceiroEditando.id,
+          nome: parceiroEditando.nome,
+          email: parceiroEditando.email,
+          telefone: parceiroEditando.telefone,
+          empresa: parceiroEditando.empresa || '',
+          cidade: parceiroEditando.cidade || '',
+          tipo_parceria: parceiroEditando.tipo_parceria,
+          mensagem: parceiroEditando.mensagem || '',
+          status: parceiroEditando.status,
+        }),
+      });
+
+      const dados = await res.json();
+
+      if (!res.ok) {
+        throw new Error(dados.error || 'Erro ao atualizar a solicitação.');
+      }
+
+      const atualizado = dados.lead as ParceiroLead;
+      setParceiros((anteriores) =>
+        anteriores.map((item) => (item.id === atualizado.id ? atualizado : item))
+      );
+      setParceiroEditando(null);
+      setMensagemParceiro({ tipo: 'sucesso', texto: 'Solicitação de parceria atualizada.' });
+    } catch (err) {
+      setMensagemParceiro({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao atualizar a solicitação.',
+      });
+    } finally {
+      setSalvandoParceiro(false);
+    }
+  }
+
+  async function handleAceitarParceiro(item: ParceiroLead) {
+    if (!confirm(`Aceitar a parceria de "${item.nome}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/parceiros', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, status: 'fechado' }),
+      });
+
+      if (!res.ok) {
+        const dados = await res.json().catch(() => ({}));
+        throw new Error(dados.error || 'Erro ao aceitar a parceria.');
+      }
+
+      setParceiros((anteriores) =>
+        anteriores.map((parceiro) =>
+          parceiro.id === item.id ? { ...parceiro, status: 'fechado' } : parceiro
+        )
+      );
+      setMensagemParceiro({ tipo: 'sucesso', texto: `Parceria de "${item.nome}" aceita.` });
+    } catch (err) {
+      setMensagemParceiro({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao aceitar a parceria.',
+      });
+    }
+  }
+
+  async function handleExcluirParceiro(item: ParceiroLead) {
+    if (!confirm(`Excluir a solicitação de parceria de "${item.nome}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/parceiros?id=${encodeURIComponent(item.id)}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const dados = await res.json().catch(() => ({}));
+        throw new Error(dados.error || 'Erro ao excluir a solicitação.');
+      }
+
+      setParceiros((anteriores) => anteriores.filter((parceiro) => parceiro.id !== item.id));
+      setMensagemParceiro({ tipo: 'sucesso', texto: 'Solicitação de parceria excluída.' });
+    } catch (err) {
+      setMensagemParceiro({
+        tipo: 'erro',
+        texto: err instanceof Error ? err.message : 'Erro ao excluir a solicitação.',
+      });
     }
   }
 
@@ -1027,6 +1149,22 @@ export default function AdminPage() {
                 </span>
               </div>
 
+              {mensagemParceiro && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    marginBottom: 16,
+                    fontSize: 13,
+                    background: mensagemParceiro.tipo === 'sucesso' ? '#ECFDF5' : '#FEF2F2',
+                    color: mensagemParceiro.tipo === 'sucesso' ? '#065F46' : '#991B1B',
+                    border: `1px solid ${mensagemParceiro.tipo === 'sucesso' ? '#A7F3D0' : '#FECACA'}`,
+                  }}
+                >
+                  {mensagemParceiro.texto}
+                </div>
+              )}
+
               {carregandoParceiros ? (
                 <p style={{ color: '#64748b', fontSize: 14 }}>Carregando solicitações...</p>
               ) : parceiros.length === 0 ? (
@@ -1043,7 +1181,9 @@ export default function AdminPage() {
                         <th style={{ padding: '10px 8px' }}>Contato</th>
                         <th style={{ padding: '10px 8px' }}>Localidade</th>
                         <th style={{ padding: '10px 8px' }}>Mensagem</th>
+                        <th style={{ padding: '10px 8px' }}>Status</th>
                         <th style={{ padding: '10px 8px' }}>Data</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right' }}>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1076,8 +1216,87 @@ export default function AdminPage() {
                               '—'
                             )}
                           </td>
+                          <td style={{ padding: '10px 8px' }}>
+                            <span
+                              style={{
+                                background:
+                                  item.status === 'fechado'
+                                    ? '#ECFDF5'
+                                    : item.status === 'perdido'
+                                      ? '#FEE2E2'
+                                      : item.status === 'atendimento'
+                                        ? '#EFF6FF'
+                                        : '#FFFBEB',
+                                color:
+                                  item.status === 'fechado'
+                                    ? '#065F46'
+                                    : item.status === 'perdido'
+                                      ? '#991B1B'
+                                      : item.status === 'atendimento'
+                                        ? '#1D4ED8'
+                                        : '#B45309',
+                                padding: '2px 8px',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {ROTULOS_STATUS_PARCERIA[item.status] || item.status}
+                            </span>
+                          </td>
                           <td style={{ padding: '10px 8px', color: '#64748b', whiteSpace: 'nowrap', fontSize: 11 }}>
                             {item.criado_em ? new Date(item.criado_em).toLocaleDateString('pt-BR') : '—'}
+                          </td>
+                          <td style={{ padding: '10px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            {item.status !== 'fechado' && (
+                              <button
+                                onClick={() => handleAceitarParceiro(item)}
+                                style={{
+                                  background: '#059669',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '6px 10px',
+                                  borderRadius: 6,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  marginRight: 6,
+                                }}
+                              >
+                                Aceitar
+                              </button>
+                            )}
+                            <button
+                              onClick={() => abrirEdicaoParceiro(item)}
+                              style={{
+                                background: '#F5A900',
+                                color: '#102B50',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: 6,
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: 'pointer',
+                                marginRight: 6,
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleExcluirParceiro(item)}
+                              style={{
+                                background: '#EF4444',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                fontWeight: 600,
+                                fontSize: 12,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Excluir
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1510,6 +1729,193 @@ export default function AdminPage() {
                   }}
                 >
                   {salvandoAnunciante ? 'Salvando...' : anuncianteEditando ? 'Salvar Alterações' : 'Cadastrar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PARA EDITAR SOLICITAÇÃO DE PARCERIA */}
+      {parceiroEditando && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 620,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: 28,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, color: '#102B50', fontWeight: 800, margin: 0 }}>
+                Editar solicitação de parceria
+              </h2>
+              <button
+                onClick={() => setParceiroEditando(null)}
+                style={{ background: 'none', border: 'none', fontSize: 22, color: '#94a3b8', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSalvarParceiro} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Nome</label>
+                <input
+                  type="text"
+                  className="input-arclar"
+                  required
+                  value={parceiroEditando.nome}
+                  onChange={(e) => atualizarCampoParceiro('nome', e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>E-mail</label>
+                  <input
+                    type="email"
+                    className="input-arclar"
+                    required
+                    value={parceiroEditando.email}
+                    onChange={(e) => atualizarCampoParceiro('email', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Telefone</label>
+                  <input
+                    type="text"
+                    className="input-arclar"
+                    required
+                    value={parceiroEditando.telefone}
+                    onChange={(e) => atualizarCampoParceiro('telefone', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Empresa</label>
+                  <input
+                    type="text"
+                    className="input-arclar"
+                    value={parceiroEditando.empresa || ''}
+                    onChange={(e) => atualizarCampoParceiro('empresa', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Cidade / UF</label>
+                  <input
+                    type="text"
+                    className="input-arclar"
+                    value={parceiroEditando.cidade || ''}
+                    onChange={(e) => atualizarCampoParceiro('cidade', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Tipo de parceria</label>
+                  <select
+                    className="input-arclar"
+                    value={parceiroEditando.tipo_parceria}
+                    onChange={(e) => atualizarCampoParceiro('tipo_parceria', e.target.value as ParceiroLead['tipo_parceria'])}
+                  >
+                    <option value="imobiliaria">Imobiliária</option>
+                    <option value="corretor">Corretor(a)</option>
+                    <option value="portal">Portal / Divulgação</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Status</label>
+                  <select
+                    className="input-arclar"
+                    value={parceiroEditando.status}
+                    onChange={(e) => atualizarCampoParceiro('status', e.target.value as ParceiroLead['status'])}
+                  >
+                    <option value="novo">Novo</option>
+                    <option value="atendimento">Em atendimento</option>
+                    <option value="fechado">Aceito</option>
+                    <option value="perdido">Perdido</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Mensagem</label>
+                <textarea
+                  className="input-arclar"
+                  rows={4}
+                  value={parceiroEditando.mensagem || ''}
+                  onChange={(e) => atualizarCampoParceiro('mensagem', e.target.value)}
+                />
+              </div>
+
+              {mensagemParceiro && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    background: mensagemParceiro.tipo === 'sucesso' ? '#ECFDF5' : '#FEF2F2',
+                    color: mensagemParceiro.tipo === 'sucesso' ? '#065F46' : '#991B1B',
+                  }}
+                >
+                  {mensagemParceiro.texto}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setParceiroEditando(null)}
+                  style={{
+                    background: '#F1F5F9',
+                    color: '#475569',
+                    border: 'none',
+                    padding: '11px 20px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoParceiro}
+                  style={{
+                    background: '#102B50',
+                    color: 'white',
+                    border: 'none',
+                    padding: '11px 24px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: salvandoParceiro ? 'not-allowed' : 'pointer',
+                    opacity: salvandoParceiro ? 0.7 : 1,
+                  }}
+                >
+                  {salvandoParceiro ? 'Salvando...' : 'Salvar alterações'}
                 </button>
               </div>
             </form>

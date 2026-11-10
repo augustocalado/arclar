@@ -19,6 +19,17 @@ export interface NovoParceiroLeadInput {
   mensagem?: string;
 }
 
+export interface AtualizarParceiroLeadInput {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  empresa?: string;
+  cidade?: string;
+  tipo_parceria?: TipoParceria;
+  mensagem?: string;
+  status?: StatusParceiroLead;
+}
+
 export interface ParceiroLead {
   id: string;
   nome: string;
@@ -151,6 +162,86 @@ export async function criarParceiroLead(
   }
 
   return { lead: parceiroLeadSimulado(input), persistido: false };
+}
+
+function montarPayloadAtualizacao(input: AtualizarParceiroLeadInput) {
+  const payload: Record<string, unknown> = {};
+
+  if (input.nome !== undefined) payload.nome = input.nome;
+  if (input.email !== undefined) payload.email = input.email;
+  if (input.telefone !== undefined) payload.telefone = input.telefone;
+  if (input.empresa !== undefined) payload.empresa = input.empresa || null;
+  if (input.cidade !== undefined) payload.cidade = input.cidade || null;
+  if (input.tipo_parceria !== undefined) payload.tipo_parceria = input.tipo_parceria;
+  if (input.mensagem !== undefined) payload.mensagem = input.mensagem || null;
+  if (input.status !== undefined) payload.status = input.status;
+
+  return payload;
+}
+
+export async function atualizarParceiroLead(
+  id: string,
+  input: AtualizarParceiroLeadInput
+): Promise<ParceiroLead | null> {
+  if (isSupabaseConfigured()) {
+    const client = createSupabaseAdminClient() ?? createSupabaseAnonClient();
+
+    if (client) {
+      const { data, error } = await client
+        .from('parceiros_leads')
+        .update(montarPayloadAtualizacao(input))
+        .eq('id', id)
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(`Erro ao atualizar contato de parceria: ${error.message}`);
+      }
+
+      if (data) {
+        return mapParceiroLead(data as ParceiroLeadRow);
+      }
+    }
+  }
+
+  const indice = parceirosEmMemoria.findIndex((item) => item.id === id);
+
+  if (indice === -1) {
+    return null;
+  }
+
+  const definidos = Object.fromEntries(
+    Object.entries(input).filter(([, valor]) => valor !== undefined)
+  ) as AtualizarParceiroLeadInput;
+
+  parceirosEmMemoria[indice] = { ...parceirosEmMemoria[indice], ...definidos };
+  return parceirosEmMemoria[indice];
+}
+
+export async function excluirParceiroLead(id: string): Promise<boolean> {
+  let removido = false;
+  const indice = parceirosEmMemoria.findIndex((item) => item.id === id);
+
+  if (indice !== -1) {
+    parceirosEmMemoria.splice(indice, 1);
+    removido = true;
+  }
+
+  if (isSupabaseConfigured()) {
+    const client = createSupabaseAdminClient() ?? createSupabaseAnonClient();
+
+    if (client) {
+      const { error } = await client.from('parceiros_leads').delete().eq('id', id);
+
+      if (error) {
+        throw new Error(`Erro ao excluir contato de parceria: ${error.message}`);
+      }
+
+      removido = true;
+    }
+  }
+
+  return removido;
 }
 
 export async function listarParceirosLeads(): Promise<ParceiroLead[]> {
